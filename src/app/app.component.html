@@ -1,0 +1,12 @@
+<ion-app>
+  <div class="intro-screen" *ngIf="isIntroVisible" role="img" aria-label="Cuan - Catatan Keuangan">
+    <img src="assets/icon/AKU.png" alt="Cuan - Catatan Keuangan" (load)="startIntroTimer()"
+      (error)="dismissIntro()" />
+    <div class="intro-loading-dots" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+  <ion-router-outlet></ion-router-outlet>
+</ion-app>

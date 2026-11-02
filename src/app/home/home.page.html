@@ -1,0 +1,3361 @@
+<ion-content [fullscreen]="true" class="app-main-content">
+
+  <!-- RESPONSIVE APP CONTAINER -->
+  <div class="responsive-app-container">
+    <main class="app-content-box">
+      <div class="exit-confirm-toast" *ngIf="exitToastMessage" role="status" aria-live="polite">
+        <ion-icon name="exit-outline"></ion-icon>
+        <span>{{ exitToastMessage }}</span>
+      </div>
+      <div class="form-validation-toast" *ngIf="formValidationMessage" id="form-validation-toast"
+        role="alert" aria-live="assertive">
+        <span class="validation-icon">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+        </span>
+        <span class="validation-content">
+          <strong>{{ isEn ? 'Check your transaction' : 'Periksa transaksi Anda' }}</strong>
+          <span>{{ formValidationMessage }}</span>
+        </span>
+        <button type="button" class="validation-close" (click)="clearFormValidationMessage()"
+          [attr.aria-label]="isEn ? 'Dismiss message' : 'Tutup pesan'">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- VIEW 1: LAPORAN (HOME SCREEN)              -->
+      <!-- ========================================== -->
+      <section class="screen-view view-report" *ngIf="activeView === 'report'">
+        <!-- MONTH / YEAR PICKER OVERLAY (Matches Image 2) -->
+        <div class="month-picker-overlay-backdrop home-month-picker-overlay" *ngIf="isMonthPickerOpen" (click)="closeMonthPicker()">
+          <div class="month-picker-panel" (click)="$event.stopPropagation()">
+            <!-- Picker Header: < 2026 > -->
+            <div class="picker-year-header">
+              <button class="picker-arrow-btn" (click)="pickerPrevYear()" title="Tahun Sebelumnya">&lt;</button>
+              <span class="picker-year-title">{{ pickerYear }}</span>
+              <button class="picker-arrow-btn" (click)="pickerNextYear()" title="Tahun Selanjutnya">&gt;</button>
+            </div>
+
+            <!-- Months Grid: 2 rows of 6 months -->
+            <div class="picker-months-grid">
+              <button *ngFor="let m of monthNamesList; let i = index" class="picker-month-btn"
+                [class.active-month]="selectedMonth === (i + 1) && selectedYear === pickerYear"
+                (click)="selectMonth(i + 1)">
+                {{ m }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDE DRAWER MENU (Matches Screenshot 2) -->
+        <div class="side-drawer-backdrop" *ngIf="isHeaderMenuOpen" (click)="isHeaderMenuOpen = false">
+          <div class="side-drawer-panel" (click)="$event.stopPropagation()">
+            <div class="drawer-menu-list">
+              <!-- 1. Pencarian -->
+              <div class="drawer-menu-item" (click)="activeView = 'search'; isHeaderMenuOpen = false">
+                <ion-icon name="search-outline" class="drawer-icon icon-search"></ion-icon>
+                <span class="drawer-label">{{ isEn ? 'Search' : 'Pencarian' }}</span>
+              </div>
+
+              <!-- 2. Grafik -->
+              <div class="drawer-menu-item" (click)="activeView = 'charts'; isHeaderMenuOpen = false">
+                <ion-icon name="pie-chart-outline" class="drawer-icon icon-chart"></ion-icon>
+                <span class="drawer-label">{{ isEn ? 'Charts' : 'Grafik' }}</span>
+              </div>
+
+              <!-- 3. Kategori -->
+              <div class="drawer-menu-item" (click)="activeView = 'categories'; isHeaderMenuOpen = false">
+                <ion-icon name="receipt-outline" class="drawer-icon icon-category"></ion-icon>
+                <span class="drawer-label">{{ isEn ? 'Categories' : 'Kategori' }}</span>
+              </div>
+
+              <div class="drawer-menu-item" (click)="activeView = 'savings'; isHeaderMenuOpen = false">
+                <ion-icon name="wallet-outline" class="drawer-icon icon-savings"></ion-icon>
+                <span class="drawer-label">{{ isEn ? 'Savings' : 'Nabung' }}</span>
+              </div>
+
+              <!-- 4. Pengaturan -->
+              <div class="drawer-menu-item" (click)="activeView = 'settings'; isHeaderMenuOpen = false">
+                <ion-icon name="settings-outline" class="drawer-icon icon-settings"></ion-icon>
+                <span class="drawer-label">{{ isEn ? 'Settings' : 'Pengaturan' }}</span>
+              </div>
+
+              <!-- 5. Harga Pasar -->
+              <div class="drawer-menu-item" (click)="activeView = 'market_prices'; isHeaderMenuOpen = false">
+                <ion-icon name="trending-up-outline" class="drawer-icon icon-market"></ion-icon>
+                <span class="drawer-label">{{ isEn ? 'Market Prices' : 'Harga Pasar' }}</span>
+              </div>
+
+              <!-- 6. Bantuan -->
+              <div class="drawer-menu-item" (click)="openHelpModal(); isHeaderMenuOpen = false">
+                <ion-icon name="help-circle-outline" class="drawer-icon icon-help"></ion-icon>
+                <span class="drawer-label">{{ isEn ? 'Help' : 'Bantuan' }}</span>
+              </div>
+
+              <!-- 7. Tentang -->
+              <div class="drawer-menu-item" (click)="openAboutModal(); isHeaderMenuOpen = false">
+                <ion-icon name="information-circle-outline" class="drawer-icon icon-about"></ion-icon>
+                <span class="drawer-label">{{ isEn ? 'About' : 'Tentang' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Red/Coral Header Bar (Matches Exact Screenshot) -->
+        <div class="top-nav-bar header-coral home-report-header">
+          <div class="header-row-1">
+            <!-- Left: < Okt 2026 > -->
+            <div class="month-year-nav" (click)="toggleMonthPicker()" title="Pilih Bulan / Tahun">
+              <button class="nav-arrow" (click)="$event.stopPropagation(); prevMonth()"
+                title="Bulan Sebelumnya">&lt;</button>
+              <span class="month-year-label">{{ getMonthName(selectedMonth) }} {{ selectedYear }}</span>
+              <button class="nav-arrow" (click)="$event.stopPropagation(); nextMonth()"
+                title="Bulan Selanjutnya">&gt;</button>
+            </div>
+
+            <!-- Right: Action Icons (Download, Sort, Filter, 3-Dots) -->
+            <div class="header-actions">
+              <button class="action-icon" (click)="openExportModal()" title="Export Laporan">
+                <ion-icon name="download-outline"></ion-icon>
+              </button>
+              <button class="action-icon" (click)="toggleDailySort()" title="Urutkan Tanggal">
+                <ion-icon name="swap-vertical-outline"></ion-icon>
+              </button>
+              <button class="action-icon" [class.filter-active-icon]="isFilterActive" (click)="openFilterModal()"
+                title="Saring Transaksi">
+                <ion-icon name="funnel-outline"></ion-icon>
+                <span class="filter-indicator-dot" *ngIf="isFilterActive"></span>
+              </button>
+              <button class="action-icon" (click)="isHeaderMenuOpen = !isHeaderMenuOpen" title="Pilihan">
+                <ion-icon name="ellipsis-vertical"></ion-icon>
+              </button>
+            </div>
+          </div>
+
+          <!-- Period Tabs: Harian (Active), Mingguan, Bulanan, Tahunan -->
+          <div class="period-tabs">
+            <button class="tab-btn" [class.active]="reportPeriod === 'daily'" (click)="reportPeriod = 'daily'">
+              {{ i18n.t('report.daily') }}
+            </button>
+            <button class="tab-btn" [class.active]="reportPeriod === 'weekly'" (click)="reportPeriod = 'weekly'">
+              {{ i18n.t('report.weekly') }}
+            </button>
+            <button class="tab-btn" [class.active]="reportPeriod === 'monthly'" (click)="reportPeriod = 'monthly'">
+              {{ i18n.t('report.monthly') }}
+            </button>
+            <button class="tab-btn" [class.active]="reportPeriod === 'yearly'" (click)="reportPeriod = 'yearly'">
+              {{ i18n.t('report.yearly') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Room Status Card (Screenshot 3 Exact Match) -->
+        <div class="room-status-card" *ngIf="activeRoom && isUserMemberOfActiveRoom()" (click)="openRoomDetailsModal()">
+          <div class="room-avatar">
+            <ion-icon name="people"></ion-icon>
+          </div>
+          <div class="room-info">
+            <div class="room-name">{{ activeRoom.name }}</div>
+            <div class="room-members">
+              <ion-icon name="people"></ion-icon>
+              <span>{{ activeRoom.members.length }} {{ isEn ? (activeRoom.members.length === 1 ? 'member' : 'members') : 'anggota' }}</span>
+            </div>
+          </div>
+          <div class="room-sync-status" (click)="$event.stopPropagation(); triggerRoomSync()">
+            <ion-icon name="sync-outline" class="sync-icon" [class.spinning]="isRoomSyncing"></ion-icon>
+            <div class="sync-text-group">
+              <span class="sync-title">{{ isEn ? 'Synchronized' : 'Tersinkron' }}</span>
+              <span class="sync-desc">{{ isEn ? 'All members see the same real-time data' : 'Semua anggota melihat data yang sama' }}</span>
+            </div>
+          </div>
+          <ion-icon name="chevron-forward-outline" class="room-chevron"></ion-icon>
+        </div>
+
+        <!-- Summary Strip: Pemasukan, Pengeluaran, Saldo -->
+        <div class="summary-strip">
+          <div class="summary-col">
+            <div class="summary-label">{{ i18n.t('report.income') }}</div>
+            <div class="summary-val inc">
+              {{ formatSummaryNumber(getCurrentPeriodSummary().income) }}
+            </div>
+          </div>
+          <div class="summary-col">
+            <div class="summary-label">{{ i18n.t('report.expense') }}</div>
+            <div class="summary-val exp">
+              {{ formatSummaryNumber(getCurrentPeriodSummary().expense) }}
+            </div>
+          </div>
+          <div class="summary-col">
+            <div class="summary-label">{{ i18n.t('report.balance') }}</div>
+            <div class="summary-val bal">
+              {{ formatSummaryNumber(getCurrentPeriodSummary().balance) }}
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 1: HARIAN (Default Home View) -->
+        <div class="report-content-scroll" *ngIf="reportPeriod === 'daily'">
+          <!-- EMPTY STATE (Exact Match to User Screenshot) -->
+          <div class="empty-state-container" *ngIf="getDailyGroupsForSelectedMonth().length === 0">
+            <div class="empty-doc-icon-wrapper">
+              <svg class="empty-doc-svg" viewBox="0 0 64 64" fill="none" stroke="#cbd5e1" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8h18l14 14v30a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V12a4 4 0 0 1 4-4z" />
+                <path d="M36 8v14h14" />
+                <line x1="24" y1="30" x2="40" y2="30" />
+                <line x1="24" y1="38" x2="40" y2="38" />
+                <line x1="24" y1="46" x2="32" y2="46" />
+              </svg>
+            </div>
+            <p class="empty-state-text">{{ isEn ? 'No data available' : 'Data tidak tersedia' }}</p>
+          </div>
+
+          <!-- DAILY TRANSACTIONS LIST (Matches Screenshot 3) -->
+          <div class="daily-groups-list" *ngIf="getDailyGroupsForSelectedMonth().length > 0">
+            <div class="day-group-card" *ngFor="let group of getDailyGroupsForSelectedMonth()">
+              <div class="day-header-row">
+                <div class="day-badge-wrap">
+                  <span class="day-num">{{ group.dayNumber }}</span>
+                  <div class="day-meta-stack">
+                    <span class="day-date-text">{{ group.monthYear }}</span>
+                    <span class="day-name-pill">{{ group.dayName }}</span>
+                  </div>
+                </div>
+                <div class="day-totals">
+                  <span class="inc-amt">{{ financeService.formatMoney(group.income) }}</span>
+                  <span class="exp-amt">{{ financeService.formatMoney(group.expense) }}</span>
+                </div>
+              </div>
+
+              <div class="tx-row" *ngFor="let tx of group.transactions" (click)="openEditTransaction(tx, 'report')">
+                <div class="tx-category">{{ getTxCategoryName(tx) }}</div>
+                <div class="tx-note">{{ tx.note || '-' }}</div>
+                <div class="tx-amount" [class.exp-amt]="tx.type === 'expense'" [class.inc-amt]="tx.type === 'income'">
+                  {{ financeService.formatMoney(tx.amount) }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: MINGGUAN (Exact Match to User Screenshot) -->
+        <div class="report-content-scroll" *ngIf="reportPeriod === 'weekly'">
+          <div class="weekly-row-item" *ngFor="let w of getWeeklySummaryList()" role="button" tabindex="0"
+            [attr.aria-label]="'Buka catatan harian ' + w.dateRangeLabel" (click)="openWeekInDailyView(w)"
+            (keydown.enter)="openWeekInDailyView(w)" (keydown.space)="openWeekInDailyView(w); $event.preventDefault()">
+            <div class="week-left-col">
+              <span class="week-name-label">{{ w.weekName }}</span>
+              <div class="week-badge" [class.badge-orange]="w.isCurrent" [class.badge-grey]="!w.isCurrent">
+                {{ w.dateRangeLabel }}
+              </div>
+            </div>
+            <div class="week-amounts">
+              <span class="inc-amt">{{ financeService.formatMoney(w.income) }}</span>
+              <span class="exp-amt">{{ financeService.formatMoney(w.expense) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: BULANAN (Screenshot 2 View) -->
+        <div class="report-content-scroll" *ngIf="reportPeriod === 'monthly'">
+          <div class="month-row-item" *ngFor="let m of monthlySummaryList"
+            (click)="selectedMonth = +m.periodKey.split('-')[1]; activeView = 'charts'">
+            <div class="month-badge" [class.badge-orange]="m.periodLabel === 'Okt' || m.periodLabel === 'Apr'"
+              [class.badge-grey]="m.periodLabel !== 'Okt' && m.periodLabel !== 'Apr'">
+              {{ m.periodLabel }}
+            </div>
+            <div class="month-amounts">
+              <span class="inc-amt">{{ financeService.formatMoney(m.income) }}</span>
+              <span class="exp-amt">{{ financeService.formatMoney(m.expense) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: TAHUNAN -->
+        <div class="report-content-scroll" *ngIf="reportPeriod === 'yearly'">
+          <div class="month-row-item clickable" (click)="openYearInMonthlyView(selectedYear)" role="button" tabindex="0"
+            [attr.aria-label]="'Pindah ke tampilan bulanan tahun ' + selectedYear"
+            (keydown.enter)="openYearInMonthlyView(selectedYear)"
+            (keydown.space)="openYearInMonthlyView(selectedYear); $event.preventDefault()">
+            <div class="month-badge badge-orange">{{ selectedYear }}</div>
+            <div class="month-amounts">
+              <span class="inc-amt">{{ financeService.formatMoney(yearlySummary.income) }}</span>
+              <span class="exp-amt">{{ financeService.formatMoney(yearlySummary.expense) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FLOATING ACTION BUTTON (Exact Match to Screenshot) -->
+        <button class="fab-add-btn" (click)="openAddTransaction('expense')" title="Catat Transaksi">
+          <ion-icon name="add"></ion-icon>
+        </button>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW: HARGA PASAR                          -->
+      <!-- ========================================== -->
+      <section class="screen-view view-market-prices" *ngIf="activeView === 'market_prices'">
+        <div class="top-nav-bar header-coral">
+          <div class="header-row-1">
+            <div class="back-link"
+              (click)="selectedMarketPriceCategory ? closeMarketPriceCategory() : goBackToPreviousView()"
+              [title]="selectedMarketPriceCategory
+                ? (isEn ? 'Back to Market Prices' : 'Kembali ke Harga Pasar')
+                : (isEn ? 'Back to Report' : 'Kembali ke Laporan')">
+              <ion-icon name="arrow-back-outline"></ion-icon>
+              <span>{{ selectedMarketPriceCategory
+                ? getMarketPriceCategoryName(selectedMarketPriceCategory)
+                : (isEn ? 'Market Prices' : 'Harga Pasar') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="market-price-grid" *ngIf="!selectedMarketPriceCategory">
+          <button type="button" class="market-price-category" *ngFor="let category of marketPriceCategories"
+            [attr.aria-label]="isEn ? 'Open ' + getMarketPriceCategoryName(category) : 'Buka ' + category.name"
+            (click)="openMarketPriceCategory(category)">
+            <ion-icon [name]="category.icon" class="market-price-icon"></ion-icon>
+            <span class="market-price-category-name">{{ getMarketPriceCategoryName(category) }}</span>
+            <span class="market-price-category-description">{{ getMarketPriceCategoryDescription(category) }}</span>
+            <ion-icon name="chevron-forward-outline" class="market-price-chevron"></ion-icon>
+          </button>
+        </div>
+
+        <div class="market-price-detail" *ngIf="selectedMarketPriceCategory as category">
+          <p class="market-price-description">{{ getMarketPriceCategoryDescription(category) }}</p>
+          <!-- ============================================== -->
+          <!-- CATEGORY 1: MATA UANG (KURS TRANSAKSI BI)      -->
+          <!-- ============================================== -->
+          <ng-container *ngIf="category.name === 'Mata Uang'">
+            <div class="bi-kurs-card">
+              <div class="bi-kurs-header">
+                <div class="bi-badge">
+                  <ion-icon name="business-outline"></ion-icon>
+                  <span>{{ isEn ? 'BANK INDONESIA' : 'BANK INDONESIA' }}</span>
+                </div>
+                <div class="bi-actions">
+                  <button type="button" class="bi-refresh-btn" (click)="loadCurrencyRates(true)"
+                    [disabled]="currencyRatesStatus === 'loading'"
+                    [title]="isEn ? 'Refresh rates' : 'Perbarui kurs'">
+                    <ion-icon name="refresh-outline" [class.spinning]="currencyRatesStatus === 'loading'"></ion-icon>
+                  </button>
+                  <a [href]="officialBiUrl" target="_blank" rel="noopener noreferrer" class="bi-external-link"
+                    [title]="isEn ? 'Open Bank Indonesia official website' : 'Buka website resmi Bank Indonesia'">
+                    <span>{{ isEn ? 'Official Website' : 'Web Resmi' }}</span>
+                    <ion-icon name="open-outline"></ion-icon>
+                  </a>
+                </div>
+              </div>
+
+              <div class="bi-kurs-info">
+                <div class="bi-title">{{ isEn ? 'Bank Indonesia Transaction Rates' : 'Kurs Transaksi Bank Indonesia' }}</div>
+                <div class="bi-meta">
+                  <span *ngIf="currencyRatesRecordedDate">
+                    <ion-icon name="calendar-outline"></ion-icon> {{ currencyRatesRecordedDate | date:'dd MMM y' }}
+                  </span>
+                  <span *ngIf="currencyRatesUpdatedAt">
+                    <ion-icon name="time-outline"></ion-icon>
+                    {{ isEn ? 'Updated' : 'Diperbarui' }} {{ currencyRatesUpdatedAt | date:'HH:mm' }} WIB
+                  </span>
+                </div>
+              </div>
+
+              <!-- Region Filter Chips -->
+              <div class="bi-chips-scroll">
+                <button type="button" class="bi-chip" [class.active]="selectedCurrencyRegion === 'popular'"
+                  (click)="selectCurrencyRegion('popular')">
+                  {{ isEn ? 'Popular (USD, SGD, EUR…)' : 'Populer (USD, SGD, EUR…)' }}
+                </button>
+                <button type="button" class="bi-chip" [class.active]="selectedCurrencyRegion === 'all'"
+                  (click)="selectCurrencyRegion('all')">
+                  {{ isEn ? 'All (25 Currencies)' : 'Semua (25 Mata Uang)' }}
+                </button>
+                <button type="button" class="bi-chip" [class.active]="selectedCurrencyRegion === 'asia'"
+                  (click)="selectCurrencyRegion('asia')">
+                  Asia
+                </button>
+                <button type="button" class="bi-chip" [class.active]="selectedCurrencyRegion === 'europe_americas'"
+                  (click)="selectCurrencyRegion('europe_americas')">
+                  {{ isEn ? 'Europe &amp; Americas' : 'Eropa &amp; Amerika' }}
+                </button>
+              </div>
+
+              <!-- Search Input -->
+              <div class="bi-search-bar">
+                <ion-icon name="search-outline"></ion-icon>
+                <input type="text" [(ngModel)]="currencySearchQuery"
+                  [placeholder]="isEn ? 'Search currencies (USD, SGD, Yen, Euro, Ringgit)…' : 'Cari mata uang (USD, SGD, Yen, Euro, Ringgit)…'"
+                  autocomplete="off">
+                <button type="button" class="bi-search-clear" *ngIf="currencySearchQuery"
+                  (click)="currencySearchQuery = ''">
+                  <ion-icon name="close-circle"></ion-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick Convert Box -->
+            <div class="bi-converter-card">
+              <div class="converter-title">
+                <ion-icon name="swap-horizontal-outline"></ion-icon>
+                <span>{{ isEn ? 'Quick Currency Converter (IDR Estimate)' : 'Kalkulator Kurs Cepat (Estimasi IDR)' }}</span>
+              </div>
+              <div class="converter-inputs">
+                <div class="converter-field">
+                  <label>{{ isEn ? 'Amount' : 'Jumlah' }}</label>
+                  <input type="number" [(ngModel)]="calcAmount" min="1" step="1">
+                </div>
+                <div class="converter-field">
+                  <label>{{ isEn ? 'Currency' : 'Mata Uang' }}</label>
+                  <select [(ngModel)]="calcFromCurrency">
+                    <option *ngFor="let rate of currencyRates" [value]="rate.currency">
+                      {{ rate.countryFlag }} {{ rate.currency }} - {{ rate.name }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+              <div class="converter-result">
+                <div class="converter-result-value">
+                  <span>{{ isEn ? 'Estimated Result (BI Middle Rate):' : 'Hasil Estimasi (Kurs Tengah BI):' }}</span>
+                  <strong>{{ formatCurrencyRate(calculatedConvertIdr) }}</strong>
+                </div>
+                <div class="converter-copy">
+                  <button type="button" (click)="copyEstimatedCurrency()">
+                    <ion-icon name="copy-outline"></ion-icon>
+                    {{ isEn ? 'Copy price' : 'Salin Harga' }}
+                  </button>
+                  <span [class.error]="estimatedCopyError" *ngIf="estimatedCopyMessage">
+                    {{ estimatedCopyMessage }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="market-price-loading" *ngIf="currencyRatesStatus === 'loading'">
+              <ion-spinner name="crescent" aria-label="Memuat kurs"></ion-spinner>
+              <span>{{ isEn ? 'Loading transaction rates from bi.go.id…' : 'Memuat data kurs transaksi dari bi.go.id…' }}</span>
+            </div>
+
+            <!-- Error State -->
+            <div class="market-price-error" *ngIf="currencyRatesStatus === 'error'">
+              <span>{{ isEn ? 'Currency rates could not be loaded. Check your connection and try again.' : currencyRatesError }}</span>
+              <button type="button" (click)="loadCurrencyRates(true)">{{ isEn ? 'Try again' : 'Coba lagi' }}</button>
+            </div>
+
+            <!-- Currency Rates Table / List -->
+            <div class="bi-rates-table"
+              *ngIf="currencyRatesStatus === 'ready' || (currencyRates && currencyRates.length > 0)">
+              <div class="bi-table-header">
+                <span class="col-cur">{{ isEn ? 'Currency' : 'Mata Uang' }}</span>
+                <span class="col-rate">{{ isEn ? 'Buying Rate' : 'Kurs Beli' }}</span>
+                <span class="col-rate">{{ isEn ? 'Selling Rate' : 'Kurs Jual' }}</span>
+                <span class="col-rate primary">{{ isEn ? 'Middle Rate' : 'Kurs Tengah' }}</span>
+              </div>
+
+              <div class="bi-rate-entry" *ngFor="let rate of filteredCurrencyRates">
+                <div class="bi-table-row" [class.selected]="selectedCurrencyForCopy?.currency === rate.currency"
+                  role="button" tabindex="0" (click)="toggleCurrencyCopy(rate)"
+                  (keydown.enter)="toggleCurrencyCopy(rate)"
+                  (keydown.space)="toggleCurrencyCopy(rate); $event.preventDefault()">
+                  <div class="col-cur">
+                    <div class="cur-flag">{{ rate.countryFlag }}</div>
+                    <div class="cur-details">
+                      <span class="cur-code">{{ rate.currency }}</span>
+                      <span class="cur-sub">{{ rate.name }} <span *ngIf="rate.unit > 1">({{ rate.unit }} {{ rate.currency
+                          }})</span></span>
+                    </div>
+                  </div>
+                  <div class="col-rate cur-buy">
+                    {{ formatCurrencyRate(rate.buyRate) }}
+                  </div>
+                  <div class="col-rate cur-sell">
+                    {{ formatCurrencyRate(rate.sellRate) }}
+                  </div>
+                  <div class="col-rate cur-middle primary">
+                    {{ formatCurrencyRate(rate.middleRate) }}
+                  </div>
+                </div>
+                <div class="bi-copy-action" *ngIf="selectedCurrencyForCopy?.currency === rate.currency">
+                  <button type="button" (click)="copyCurrencyRates(rate)">
+                    <ion-icon name="copy-outline"></ion-icon>
+                    {{ isEn ? 'Copy middle rate' : 'Salin Harga' }}
+                  </button>
+                  <span [class.error]="currencyCopyError" *ngIf="currencyCopyMessage">
+                    {{ currencyCopyMessage }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="bi-empty-notice" *ngIf="filteredCurrencyRates.length === 0">
+                {{ isEn ? 'No currencies match your search.' : 'Tidak ada mata uang yang cocok dengan pencarian.' }}
+              </div>
+            </div>
+
+            <!-- Attribution Footer -->
+            <div class="lm-source-footer">
+              <ion-icon name="shield-checkmark-outline"></ion-icon>
+              <div class="lm-footer-text">
+                <span>{{ isEn ? 'Official source: ' : 'Sumber resmi: ' }}<a [href]="officialBiUrl" target="_blank"
+                    rel="noopener noreferrer">bi.go.id/id/statistik/informasi-kurs/transaksi-bi/default.aspx</a> (Bank
+                  Indonesia).</span>
+                <span>{{ isEn ? 'Bank Indonesia Transaction Rates are updated every business day as a reference for foreign exchange transactions.' : 'Kurs Transaksi Bank Indonesia diperbarui setiap hari kerja sebagai acuan transaksi valuta asing.' }}</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ============================================== -->
+          <!-- CATEGORY 2: EMAS & LOGAM MULIA (ANTAM)         -->
+          <!-- ============================================== -->
+          <ng-container *ngIf="category.name === 'Emas & Logam Mulia'">
+            <!-- Logam Mulia Antam Card -->
+            <div class="lm-gold-card">
+              <div class="lm-gold-header">
+                <div class="lm-badge">
+                  <ion-icon name="disc"></ion-icon>
+                  <span>ANTAM LOGAM MULIA</span>
+                </div>
+                <div class="lm-actions">
+                  <button type="button" class="lm-refresh-btn" (click)="loadMetalPrices(true)"
+                    [disabled]="metalPricesStatus === 'loading'"
+                    [title]="isEn ? 'Refresh prices' : 'Perbarui harga'">
+                    <ion-icon name="refresh-outline" [class.spinning]="metalPricesStatus === 'loading'"></ion-icon>
+                  </button>
+                  <a [href]="officialLogamMuliaUrl" target="_blank" rel="noopener noreferrer" class="lm-external-link"
+                    [title]="isEn ? 'Open official Precious Metals website' : 'Buka website resmi Logam Mulia'">
+                    <span>{{ isEn ? 'Official Website' : 'Web Resmi' }}</span>
+                    <ion-icon name="open-outline"></ion-icon>
+                  </a>
+                </div>
+              </div>
+
+              <div class="lm-gold-info">
+                <div class="lm-title">{{ isEn ? 'Gold Prices Today' : 'Harga Emas Hari Ini' }}</div>
+                <div class="lm-meta">
+                  <span *ngIf="metalPricesRecordedDate">
+                    <ion-icon name="calendar-outline"></ion-icon> {{ metalPricesRecordedDate | date:'dd MMM y' }}
+                  </span>
+                  <span *ngIf="metalPricesUpdatedAt">
+                    <ion-icon name="time-outline"></ion-icon>
+                    {{ isEn ? 'Updated' : 'Diperbarui' }} {{ metalPricesUpdatedAt | date:'HH:mm' }} WIB
+                  </span>
+                </div>
+              </div>
+
+              <!-- Category filter chips -->
+              <div class="lm-chips-scroll">
+                <button type="button" class="lm-chip" [class.active]="selectedMetalCategory === 'all'"
+                  (click)="selectMetalCategory('all')">
+                  {{ isEn ? 'All' : 'Semua' }}
+                </button>
+                <button type="button" class="lm-chip" [class.active]="selectedMetalCategory === 'batangan'"
+                  (click)="selectMetalCategory('batangan')">
+                  {{ isEn ? 'Gold Bars' : 'Emas Batangan' }}
+                </button>
+                <button type="button" class="lm-chip" [class.active]="selectedMetalCategory === 'gift'"
+                  (click)="selectMetalCategory('gift')">
+                  Gift Series
+                </button>
+                <button type="button" class="lm-chip" [class.active]="selectedMetalCategory === 'batik'"
+                  (click)="selectMetalCategory('batik')">
+                  {{ isEn ? 'Batik Series' : 'Batik Seri' }}
+                </button>
+                <button type="button" class="lm-chip" [class.active]="selectedMetalCategory === 'silver'"
+                  (click)="selectMetalCategory('silver')">
+                  {{ isEn ? 'Silver' : 'Perak (Silver)' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="market-price-loading" *ngIf="metalPricesStatus === 'loading'">
+              <ion-spinner name="crescent" aria-label="Memuat harga"></ion-spinner>
+              <span>{{ isEn ? 'Loading prices from logammulia.com…' : 'Memuat data harga dari logammulia.com…' }}</span>
+            </div>
+
+            <!-- Error State -->
+            <div class="market-price-error" *ngIf="metalPricesStatus === 'error'">
+              <span>{{ isEn ? 'Precious metal prices could not be loaded. Check your connection and try again.' : metalPricesError }}</span>
+              <button type="button" (click)="loadMetalPrices(true)">{{ isEn ? 'Try again' : 'Coba lagi' }}</button>
+            </div>
+
+            <!-- Instrument List -->
+            <div class="market-price-instrument-list lm-list"
+              *ngIf="metalPricesStatus === 'ready' || (metalPrices && metalPrices.length > 0)">
+              <ng-container *ngFor="let metal of filteredMetalPrices">
+                <div class="market-price-instrument lm-instrument"
+                  [class.copy-selected]="selectedMarketPriceCopyKey === 'precious:' + metal.name"
+                  (click)="selectPreciousMetalForCopy(metal)">
+                  <div class="instrument-info">
+                    <div class="lm-icon-box" [class.silver]="metal.material === 'silver'">
+                      <ion-icon [name]="metal.material === 'silver' ? 'cube-outline' : 'disc-outline'"></ion-icon>
+                    </div>
+                    <div class="lm-name-col">
+                      <span class="lm-item-name">{{ getMetalDisplayName(metal) }}</span>
+                      <span class="lm-item-meta">{{ isEn ? (metal.material === 'silver' ? 'Silver' : 'Gold') : metal.materialType }} &bull; {{ metal.weight }} {{ metal.weightUnit
+                        }}</span>
+                    </div>
+                  </div>
+                  <div class="lm-price-col">
+                    <span class="instrument-price lm-sell-price">{{ formatMetalPrice(metal.sellPrice) }}</span>
+                    <span class="lm-buyback-price" *ngIf="metal.buybackPrice">
+                      {{ isEn ? 'Buyback' : 'Buyback' }}: {{ formatMetalPrice(metal.buybackPrice) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="market-copy-action" *ngIf="selectedMarketPriceCopyKey === 'precious:' + metal.name">
+                  <button type="button" (click)="copySelectedMarketPrice()">
+                    <ion-icon name="copy-outline"></ion-icon>
+                    {{ isEn ? 'Copy price' : 'Salin Harga' }}
+                  </button>
+                  <span [class.error]="marketPriceCopyError" *ngIf="marketPriceCopyMessage">
+                    {{ marketPriceCopyMessage }}
+                  </span>
+                </div>
+              </ng-container>
+
+              <div class="lm-empty-notice" *ngIf="filteredMetalPrices.length === 0">
+                {{ isEn ? 'No data available for this category.' : 'Tidak ada data untuk kategori ini.' }}
+              </div>
+            </div>
+
+            <!-- Attribution Footer -->
+            <div class="lm-source-footer">
+              <ion-icon name="shield-checkmark-outline"></ion-icon>
+              <div class="lm-footer-text">
+                <span>{{ isEn ? 'Official source: ' : 'Sumber resmi: ' }}<a [href]="officialLogamMuliaUrl" target="_blank"
+                    rel="noopener noreferrer">logammulia.com/id/harga-emas-hari-ini</a> (PT Antam Tbk).</span>
+                <span>{{ isEn ? 'Updated every business day at 8:30 AM WIB. Location: Graha Dipta Pulo Gadung Gold Boutique.' : 'Di-update setiap hari kerja pkl. 08.30 WIB. Lokasi: Butik Emas Graha Dipta Pulo Gadung.' }}</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ============================================== -->
+          <!-- CATEGORY 3: SAHAM & INDEKS (YAHOO FINANCE ^JKSE) -->
+          <!-- ============================================== -->
+          <ng-container *ngIf="category.name === 'Saham & Indeks'">
+            <div class="yj-ihsg-card">
+              <div class="yj-ihsg-header">
+                <div class="yj-badge">
+                  <ion-icon name="trending-up-outline"></ion-icon>
+                  <span>YAHOO FINANCE &bull; IDX</span>
+                </div>
+                <div class="yj-actions">
+                  <button type="button" class="yj-refresh-btn" (click)="loadIhsgData(true)"
+                    [disabled]="ihsgStatus === 'loading'"
+                    [title]="isEn ? 'Refresh data' : 'Perbarui data'">
+                    <ion-icon name="refresh-outline" [class.spinning]="ihsgStatus === 'loading'"></ion-icon>
+                  </button>
+                  <a [href]="officialYahooJkseUrl" target="_blank" rel="noopener noreferrer" class="yj-external-link"
+                    [title]="isEn ? 'Open Yahoo Finance website' : 'Buka website resmi Yahoo Finance'">
+                    <span>Yahoo Finance</span>
+                    <ion-icon name="open-outline"></ion-icon>
+                  </a>
+                </div>
+              </div>
+
+              <!-- IHSG Main Price Display -->
+              <div class="yj-price-box" *ngIf="ihsgSummary as summary">
+                <div class="yj-symbol-row">
+                  <span class="yj-symbol">{{ summary.symbol }}</span>
+                  <span class="yj-name">{{ isEn ? 'IDX Composite' : summary.name }}</span>
+                </div>
+                <div class="yj-main-val">
+                  <button type="button" class="yj-price-copy-trigger"
+                    [class.copy-selected]="selectedMarketPriceCopyKey === 'stock-summary:' + summary.symbol"
+                    (click)="selectStockSummaryForCopy(summary)">
+                    {{ formatStockNumber(summary.regularMarketPrice) }}
+                  </button>
+                  <span class="yj-change-pill" [class.up]="summary.change >= 0" [class.down]="summary.change < 0">
+                    <ion-icon [name]="summary.change >= 0 ? 'caret-up-outline' : 'caret-down-outline'"></ion-icon>
+                    {{ summary.change >= 0 ? '+' : '' }}{{ formatStockNumber(summary.change) }} ({{ summary.change >= 0
+                    ? '+' : '' }}{{ formatStockNumber(summary.changePercent) }}%)
+                  </span>
+                </div>
+                <div class="market-copy-action" *ngIf="selectedMarketPriceCopyKey === 'stock-summary:' + summary.symbol">
+                  <button type="button" (click)="copySelectedMarketPrice()">
+                    <ion-icon name="copy-outline"></ion-icon>
+                    {{ isEn ? 'Copy price' : 'Salin Harga' }}
+                  </button>
+                  <span [class.error]="marketPriceCopyError" *ngIf="marketPriceCopyMessage">
+                    {{ marketPriceCopyMessage }}
+                  </span>
+                </div>
+
+                <!-- Sparkline Chart -->
+                <div class="yj-chart-container" *ngIf="ihsgSparklinePoints">
+                  <svg class="yj-sparkline-svg" viewBox="0 0 280 48" preserveAspectRatio="none">
+                    <polyline fill="none" [attr.stroke]="summary.change >= 0 ? '#10b981' : '#f43f5e'" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round" [attr.points]="ihsgSparklinePoints" />
+                  </svg>
+                </div>
+
+                <!-- Key stats strip -->
+                <div class="yj-stats-grid">
+                  <div class="stat-item">
+                    <span class="lbl">{{ isEn ? 'Daily Range' : 'Rentang Harian' }}</span>
+                    <span class="val">{{ formatStockNumber(summary.dayLow) }} - {{ formatStockNumber(summary.dayHigh)
+                      }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="lbl">{{ isEn ? '52-Week Range' : 'Rentang 52 Minggu' }}</span>
+                    <span class="val">{{ formatStockNumber(summary.fiftyTwoWeekLow) }} - {{
+                      formatStockNumber(summary.fiftyTwoWeekHigh) }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="lbl">{{ isEn ? 'Daily Volume' : 'Volume Harian' }}</span>
+                    <span class="val">{{ formatVolume(summary.volume) }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="lbl">{{ isEn ? 'Last Updated' : 'Terakhir Update' }}</span>
+                    <span class="val">{{ summary.lastUpdated | date:'dd MMM y, HH:mm' }} WIB</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Range selector buttons -->
+              <div class="yj-range-tabs">
+                <button type="button" class="yj-tab" [class.active]="selectedIhsgRange === '1mo'"
+                  (click)="selectIhsgRange('1mo')">{{ isEn ? '1 Month' : '1 Bulan' }}</button>
+                <button type="button" class="yj-tab" [class.active]="selectedIhsgRange === '3mo'"
+                  (click)="selectIhsgRange('3mo')">{{ isEn ? '3 Months' : '3 Bulan' }}</button>
+                <button type="button" class="yj-tab" [class.active]="selectedIhsgRange === '6mo'"
+                  (click)="selectIhsgRange('6mo')">{{ isEn ? '6 Months' : '6 Bulan' }}</button>
+                <button type="button" class="yj-tab" [class.active]="selectedIhsgRange === '1y'"
+                  (click)="selectIhsgRange('1y')">{{ isEn ? '1 Year' : '1 Tahun' }}</button>
+              </div>
+
+              <!-- Search Input for history -->
+              <div class="yj-search-bar">
+                <ion-icon name="search-outline"></ion-icon>
+                <input type="text" [(ngModel)]="ihsgHistorySearch"
+                  [placeholder]="isEn ? 'Filter by date (e.g. Oct 2026)…' : 'Filter berdasarkan tanggal (misal: Okt 2026)…'"
+                  autocomplete="off">
+                <button type="button" class="yj-search-clear" *ngIf="ihsgHistorySearch"
+                  (click)="ihsgHistorySearch = ''">
+                  <ion-icon name="close-circle"></ion-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="market-price-loading" *ngIf="ihsgStatus === 'loading' && !ihsgSummary">
+              <ion-spinner name="crescent" aria-label="Memuat IHSG"></ion-spinner>
+              <span>{{ isEn ? 'Loading price history from finance.yahoo.com…' : 'Memuat riwayat harga dari finance.yahoo.com…' }}</span>
+            </div>
+
+            <!-- Error State -->
+            <div class="market-price-error" *ngIf="ihsgStatus === 'error'">
+              <span>{{ ihsgError }}</span>
+              <button type="button" (click)="loadIhsgData(true)">{{ isEn ? 'Try again' : 'Coba lagi' }}</button>
+            </div>
+
+            <!-- History Table (Tabel Riwayat Harga) -->
+            <div class="yj-history-card" *ngIf="ihsgSummary as summary">
+              <div class="yj-card-heading">
+                <ion-icon name="time-outline"></ion-icon>
+                <span>{{ isEn ? 'IHSG Price History (^JKSE)' : 'Tabel Riwayat Harga IHSG (^JKSE)' }}</span>
+              </div>
+
+              <div class="yj-table-wrapper">
+                <table class="yj-table">
+                  <thead>
+                    <tr>
+                      <th>{{ isEn ? 'Date' : 'Tanggal' }}</th>
+                      <th class="text-right">{{ isEn ? 'Close' : 'Penutupan' }}</th>
+                      <th class="text-right">{{ isEn ? 'Change' : 'Perubahan' }}</th>
+                      <th class="text-right">{{ isEn ? 'Open' : 'Pembukaan' }}</th>
+                      <th class="text-right">{{ isEn ? 'High' : 'Tertinggi' }}</th>
+                      <th class="text-right">{{ isEn ? 'Low' : 'Terendah' }}</th>
+                      <th class="text-right">{{ isEn ? 'Volume' : 'Volume' }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of filteredIhsgHistory"
+                      [class.copy-selected]="selectedMarketPriceCopyKey === 'stock-history:' + summary.symbol + ':' + row.date"
+                      (click)="selectStockHistoryForCopy(summary.symbol, summary.currency, row)">
+                      <td class="font-bold text-nowrap">{{ row.date }}</td>
+                      <td class="text-right font-bold">{{ formatStockNumber(row.close) }}</td>
+                      <td class="text-right text-nowrap" [class.text-up]="row.change >= 0"
+                        [class.text-down]="row.change < 0">
+                        {{ row.change >= 0 ? '+' : '' }}{{ formatStockNumber(row.change) }} ({{ row.change >= 0 ? '+' :
+                        '' }}{{ formatStockNumber(row.changePercent) }}%)
+                      </td>
+                      <td class="text-right text-muted">{{ formatStockNumber(row.open) }}</td>
+                      <td class="text-right text-muted">{{ formatStockNumber(row.high) }}</td>
+                      <td class="text-right text-muted">{{ formatStockNumber(row.low) }}</td>
+                      <td class="text-right text-muted">{{ formatVolume(row.volume) }}</td>
+                    </tr>
+                    <ng-container *ngFor="let row of filteredIhsgHistory">
+                      <tr class="market-copy-row"
+                        *ngIf="selectedMarketPriceCopyKey === 'stock-history:' + summary.symbol + ':' + row.date">
+                        <td colspan="7">
+                          <div class="market-copy-action">
+                            <button type="button" (click)="copySelectedMarketPrice()">
+                              <ion-icon name="copy-outline"></ion-icon>
+                              {{ isEn ? 'Copy price' : 'Salin Harga' }}
+                            </button>
+                            <span [class.error]="marketPriceCopyError" *ngIf="marketPriceCopyMessage">
+                              {{ marketPriceCopyMessage }}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    </ng-container>
+                    <tr *ngIf="filteredIhsgHistory.length === 0">
+                      <td colspan="7" class="text-center py-4 text-muted">
+                        {{ isEn ? 'No history data matches this search.' : 'Tidak ada data riwayat untuk pencarian ini.' }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Attribution Footer -->
+            <div class="lm-source-footer">
+              <ion-icon name="shield-checkmark-outline"></ion-icon>
+              <div class="lm-footer-text">
+                <span>{{ isEn ? 'Official source: ' : 'Sumber resmi: ' }}<a [href]="officialYahooJkseUrl" target="_blank"
+                    rel="noopener noreferrer">finance.yahoo.com/quote/^JKSE/history/</a> (Yahoo Finance - Bursa Efek
+                  Indonesia / IDX).</span>
+                <span>{{ isEn ? 'Historical data includes the IHSG opening, high, low, closing prices, and trading volume.' : 'Data historis mencakup harga pembukaan, tertinggi, terendah, penutupan, dan volume perdagangan IHSG.' }}</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ============================================== -->
+          <!-- CATEGORY 4: KOMODITAS PANGAN (PIHPS BI)        -->
+          <!-- ============================================== -->
+          <ng-container *ngIf="category.name === 'Komoditas'">
+            <!-- Main PIHPS Card -->
+            <div class="km-main-card">
+              <div class="km-header">
+                <div class="km-badge">
+                  <ion-icon name="nutrition"></ion-icon>
+                  <span>PIHPS NASIONAL &bull; BANK INDONESIA</span>
+                </div>
+                <div class="km-actions">
+                  <button type="button" class="km-refresh-btn" (click)="loadCommodityPrices(true)"
+                        [disabled]="commodityPricesStatus === 'loading'"
+                        [title]="isEn ? 'Refresh food prices' : 'Perbarui harga pangan'">
+                    <ion-icon name="refresh-outline" [class.spinning]="commodityPricesStatus === 'loading'"></ion-icon>
+                  </button>
+                  <a [href]="officialBiHargapanganUrl" target="_blank" rel="noopener noreferrer"
+                    class="km-external-link"
+                    [title]="isEn ? 'Open official PIHPS BI website' : 'Buka website resmi PIHPS BI'">
+                    <span>PIHPS Web</span>
+                    <ion-icon name="open-outline"></ion-icon>
+                  </a>
+                </div>
+              </div>
+
+              <div class="km-title-row">
+                <div>
+                  <h3 class="km-title">{{ isEn ? 'Food Commodity Prices' : 'Harga Komoditas Pangan' }}</h3>
+                  <div class="km-meta">
+                    <span *ngIf="commodityPricesRecordedDate">
+                      <ion-icon name="calendar-outline"></ion-icon> {{ commodityPricesRecordedDate | date:'dd MMM y' }}
+                    </span>
+                    <span *ngIf="commodityPricesUpdatedAt">
+                      <ion-icon name="time-outline"></ion-icon> {{ isEn ? 'Updated' : 'Diperbarui' }} {{ commodityPricesUpdatedAt | date:'HH:mm' }}
+                      WIB
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Summary statistics pills -->
+              <div class="km-stat-grid" *ngIf="commodityPrices && commodityPrices.length > 0">
+                <div class="km-stat-box up">
+                  <div class="km-stat-icon"><ion-icon name="trending-up-outline"></ion-icon></div>
+                  <div class="km-stat-info">
+                    <span class="km-stat-val">{{ commoditySummaryStats.up }}</span>
+                    <span class="km-stat-lbl">{{ isEn ? 'Up' : 'Naik' }}</span>
+                  </div>
+                </div>
+                <div class="km-stat-box down">
+                  <div class="km-stat-icon"><ion-icon name="trending-down-outline"></ion-icon></div>
+                  <div class="km-stat-info">
+                    <span class="km-stat-val">{{ commoditySummaryStats.down }}</span>
+                    <span class="km-stat-lbl">{{ isEn ? 'Down' : 'Turun' }}</span>
+                  </div>
+                </div>
+                <div class="km-stat-box stable">
+                  <div class="km-stat-icon"><ion-icon name="remove-outline"></ion-icon></div>
+                  <div class="km-stat-info">
+                    <span class="km-stat-val">{{ commoditySummaryStats.stable }}</span>
+                    <span class="km-stat-lbl">{{ isEn ? 'Stable' : 'Stabil' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Search Input -->
+              <div class="km-search-box">
+                <ion-icon name="search-outline"></ion-icon>
+                <input type="text" [(ngModel)]="commoditySearchQuery"
+                  [placeholder]="isEn ? 'Search rice, chili, eggs, meat, cooking oil...' : 'Cari beras, cabai, telur, daging, minyak...'"
+                  [attr.aria-label]="isEn ? 'Search commodities' : 'Cari komoditas'" />
+                <button type="button" *ngIf="commoditySearchQuery" (click)="commoditySearchQuery = ''"
+                  class="km-clear-search">
+                  <ion-icon name="close-circle"></ion-icon>
+                </button>
+              </div>
+
+              <!-- Group Filter Chips -->
+              <div class="km-chips-scroll">
+                <button type="button" *ngFor="let grp of getCommodityGroups()" class="km-chip"
+                  [class.active]="selectedCommodityGroup === grp.id" (click)="selectCommodityGroup(grp.id)">
+                  <ion-icon [name]="grp.icon"></ion-icon>
+                  <span>{{ getCommodityGroupDisplayName(grp.label) }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="market-price-loading" *ngIf="commodityPricesStatus === 'loading'">
+              <ion-spinner name="crescent" aria-label="Memuat harga komoditas"></ion-spinner>
+              <span>{{ isEn ? 'Loading food prices from bi.go.id/hargapangan…' : 'Memuat data harga pangan dari bi.go.id/hargapangan…' }}</span>
+            </div>
+
+            <!-- Error State -->
+            <div class="market-price-error" *ngIf="commodityPricesStatus === 'error'">
+              <span>{{ isEn ? 'Food commodity prices could not be loaded. Check your connection and try again.' : commodityPricesError }}</span>
+              <button type="button" (click)="loadCommodityPrices(true)">{{ isEn ? 'Try again' : 'Coba lagi' }}</button>
+            </div>
+
+            <!-- Commodities List -->
+            <div class="km-commodity-list"
+              *ngIf="commodityPricesStatus === 'ready' || (commodityPrices && commodityPrices.length > 0)">
+              <div class="km-commodity-card" *ngFor="let item of filteredCommodityPrices"
+                (click)="openCommodityDetail(item)">
+                <div class="km-card-left">
+                  <div class="km-icon-box" [ngClass]="item.group">
+                    <ion-icon [name]="
+                        item.group === 'beras' ? 'nutrition-outline' :
+                        item.group === 'cabai' ? 'flame-outline' :
+                        item.group === 'bawang' ? 'ellipse-outline' :
+                        item.group === 'daging' ? 'restaurant-outline' :
+                        item.group === 'telur' ? 'egg-outline' :
+                        item.group === 'minyak' ? 'water-outline' :
+                        item.group === 'gula' ? 'cube-outline' : 'leaf-outline'
+                      "></ion-icon>
+                  </div>
+                  <div class="km-name-wrap">
+                    <div class="km-item-name">{{ getCommodityDisplayName(item) }}</div>
+                    <div class="km-item-sub">
+                      <span class="km-badge-sub">{{ getCommodityGroupDisplayName(item.groupLabel) }}</span>
+                      <span class="km-unit-text">{{ isEn ? 'per' : 'per' }} {{ item.denomination }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="km-card-center" *ngIf="item.history && item.history.length > 1">
+                  <svg class="km-sparkline" viewBox="0 0 80 28" preserveAspectRatio="none">
+                    <polyline fill="none"
+                      [attr.stroke]="item.fluc > 0 ? '#ef4444' : (item.fluc < 0 ? '#10b981' : '#6b7280')"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      [attr.points]="getCommoditySparklinePoints(item.history)" />
+                  </svg>
+                </div>
+
+                <div class="km-card-right">
+                  <div class="km-price">{{ formatCommodityPrice(item.price) }}</div>
+                  <div class="km-change-pill" [class.up]="item.fluc > 0" [class.down]="item.fluc < 0"
+                    [class.stable]="item.fluc === 0">
+                    <ion-icon
+                      [name]="item.fluc > 0 ? 'caret-up-outline' : (item.fluc < 0 ? 'caret-down-outline' : 'remove-outline')"></ion-icon>
+                    <span *ngIf="item.fluc !== 0">{{ item.fluc > 0 ? '+' : '' }}{{ item.fluc }}%</span>
+                    <span *ngIf="item.fluc === 0">{{ isEn ? 'Stable' : 'Stabil' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="km-empty-notice" *ngIf="filteredCommodityPrices.length === 0">
+                <ion-icon name="search-outline"></ion-icon>
+                <span>{{ isEn ? 'No food commodities match your search.' : 'Tidak ada komoditas pangan yang cocok dengan pencarian Anda.' }}</span>
+              </div>
+            </div>
+
+            <!-- Attribution Footer -->
+            <div class="lm-source-footer">
+              <ion-icon name="shield-checkmark-outline"></ion-icon>
+              <div class="lm-footer-text">
+                <span>{{ isEn ? 'Official source: ' : 'Sumber resmi: ' }}<a [href]="officialBiHargapanganUrl" target="_blank"
+                    rel="noopener noreferrer">bi.go.id/hargapangan/home/index</a>
+                  {{ isEn ? '(National Strategic Food Price Information Center - Bank Indonesia).' : '(Pusat Informasi Harga Pangan Strategis Nasional - Bank Indonesia).' }}</span>
+                <span>{{ isEn ? 'Aggregated staple food price data from traditional and modern markets across Indonesia.' : 'Menyajikan data agregasi harga komoditas pangan pokok seluruh pasar tradisional dan pasar modern se-Indonesia.' }}</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- ============================================== -->
+          <!-- CATEGORY 5: LOGAM INDUSTRI (INVESTING.COM)     -->
+          <!-- ============================================== -->
+          <ng-container *ngIf="category.name === 'Logam Industri'">
+            <div class="in-card">
+              <div class="in-header">
+                <div class="in-badge">
+                  <ion-icon name="layers-outline"></ion-icon>
+                  <span>INVESTING.COM</span>
+                </div>
+                <div class="in-actions">
+                  <button type="button" class="in-refresh-btn" (click)="loadIndustrialMetals(true)"
+                    [disabled]="industrialMetalsStatus === 'loading'"
+                    [title]="isEn ? 'Refresh industrial metal prices' : 'Perbarui harga logam industri'">
+                    <ion-icon name="refresh-outline" [class.spinning]="industrialMetalsStatus === 'loading'"></ion-icon>
+                  </button>
+                  <a [href]="officialInvestingMetalsUrl" target="_blank" rel="noopener noreferrer"
+                    class="in-external-link"
+                    [title]="isEn ? 'Open official Investing.com metals website' : 'Buka website resmi Investing.com Logam'">
+                    <span>{{ isEn ? 'Official Website' : 'Web Resmi' }}</span>
+                    <ion-icon name="open-outline"></ion-icon>
+                  </a>
+                </div>
+              </div>
+
+              <div class="in-title-row">
+                <div>
+                  <h3 class="in-title">{{ isEn ? 'Industrial Metal Commodities' : 'Komoditas Logam Industri' }}</h3>
+                  <div class="in-meta">
+                    <span *ngIf="industrialMetalsRecordedDate">
+                      <ion-icon name="calendar-outline"></ion-icon> {{ industrialMetalsRecordedDate | date:'dd MMM y' }}
+                    </span>
+                    <span *ngIf="industrialMetalsUpdatedAt">
+                      <ion-icon name="time-outline"></ion-icon> {{ isEn ? 'Updated' : 'Diperbarui' }} {{ industrialMetalsUpdatedAt | date:'HH:mm'
+                      }} WIB
+                    </span>
+                    <span class="in-usd-rate">
+                      <ion-icon name="cash-outline"></ion-icon> {{ isEn ? 'Rate:' : 'Kurs:' }} Rp {{ industrialMetalsUsdRate | number:'1.0-0'
+                      }}/USD
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Summary statistics pills -->
+              <div class="in-stat-grid" *ngIf="industrialMetals && industrialMetals.length > 0">
+                <div class="in-stat-box up">
+                  <div class="in-stat-icon"><ion-icon name="trending-up-outline"></ion-icon></div>
+                  <div class="in-stat-info">
+                    <span class="in-stat-val">{{ industrialMetalSummaryStats.up }}</span>
+                    <span class="in-stat-lbl">{{ isEn ? 'Up' : 'Naik' }}</span>
+                  </div>
+                </div>
+                <div class="in-stat-box down">
+                  <div class="in-stat-icon"><ion-icon name="trending-down-outline"></ion-icon></div>
+                  <div class="in-stat-info">
+                    <span class="in-stat-val">{{ industrialMetalSummaryStats.down }}</span>
+                    <span class="in-stat-lbl">{{ isEn ? 'Down' : 'Turun' }}</span>
+                  </div>
+                </div>
+                <div class="in-stat-box stable">
+                  <div class="in-stat-icon"><ion-icon name="remove-outline"></ion-icon></div>
+                  <div class="in-stat-info">
+                    <span class="in-stat-val">{{ industrialMetalSummaryStats.stable }}</span>
+                    <span class="in-stat-lbl">{{ isEn ? 'Stable' : 'Stabil' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Search Input -->
+              <div class="in-search-box">
+                <ion-icon name="search-outline"></ion-icon>
+                <input type="text" [(ngModel)]="industrialMetalSearchQuery"
+                  [placeholder]="isEn ? 'Search copper, nickel, aluminium, tin, zinc...' : 'Cari tembaga, nikel, aluminium, timah, seng...'"
+                  [attr.aria-label]="isEn ? 'Search industrial metals' : 'Cari logam industri'" />
+                <button type="button" *ngIf="industrialMetalSearchQuery" (click)="industrialMetalSearchQuery = ''"
+                  class="in-clear-search">
+                  <ion-icon name="close-circle"></ion-icon>
+                </button>
+              </div>
+
+              <!-- Category Chips -->
+              <div class="in-chips-scroll">
+                <button type="button" class="in-chip" [class.active]="selectedIndustrialMetalGroup === 'all'"
+                  (click)="selectIndustrialMetalGroup('all')">
+                  <ion-icon name="grid-outline"></ion-icon>
+                  <span>{{ isEn ? 'All' : 'Semua' }}</span>
+                </button>
+                <button type="button" class="in-chip" [class.active]="selectedIndustrialMetalGroup === 'base'"
+                  (click)="selectIndustrialMetalGroup('base')">
+                  <ion-icon name="layers-outline"></ion-icon>
+                  <span>{{ isEn ? 'Base Metals' : 'Logam Dasar' }}</span>
+                </button>
+                <button type="button" class="in-chip" [class.active]="selectedIndustrialMetalGroup === 'steel'"
+                  (click)="selectIndustrialMetalGroup('steel')">
+                  <ion-icon name="construct-outline"></ion-icon>
+                  <span>{{ isEn ? 'Steel &amp; Iron' : 'Baja &amp; Besi' }}</span>
+                </button>
+                <button type="button" class="in-chip" [class.active]="selectedIndustrialMetalGroup === 'precious_ind'"
+                  (click)="selectIndustrialMetalGroup('precious_ind')">
+                  <ion-icon name="diamond-outline"></ion-icon>
+                  <span>{{ isEn ? 'Industrial Precious Metals' : 'Mulia Industri' }}</span>
+                </button>
+              </div>
+
+              <!-- Loading State -->
+              <div class="in-loading"
+                *ngIf="industrialMetalsStatus === 'loading' && (!industrialMetals || industrialMetals.length === 0)">
+                <ion-spinner name="crescent"></ion-spinner>
+                <span>{{ isEn ? 'Loading metal commodity prices from Investing.com...' : 'Memuat harga komoditas logam dari Investing.com...' }}</span>
+              </div>
+
+              <!-- Error State -->
+              <div class="in-error-state"
+                *ngIf="industrialMetalsStatus === 'error' && (!industrialMetals || industrialMetals.length === 0)">
+                <ion-icon name="alert-circle-outline"></ion-icon>
+                <span>{{ isEn ? 'Industrial metal prices could not be loaded. Check your connection and try again.' : industrialMetalsError }}</span>
+                <button type="button" (click)="loadIndustrialMetals(true)">{{ isEn ? 'Try again' : 'Coba lagi' }}</button>
+              </div>
+
+              <!-- Metal List -->
+              <div class="in-list" *ngIf="filteredIndustrialMetals.length > 0">
+                <div class="in-item" *ngFor="let metal of filteredIndustrialMetals"
+                  (click)="openIndustrialMetalDetail(metal)">
+                  <div class="in-item-left">
+                    <div class="in-symbol-badge" [class.base]="metal.category === 'base'"
+                      [class.steel]="metal.category === 'steel'" [class.precious]="metal.category === 'precious_ind'">
+                      {{ metal.symbol }}
+                    </div>
+                    <div class="in-info">
+                      <div class="in-name-row">
+                        <span class="in-name">{{ isEn ? metal.englishName : metal.name }}</span>
+                        <span class="in-exchange-pill">{{ metal.exchange }}</span>
+                      </div>
+                      <div class="in-sub">
+                        <span class="in-contract">{{ isEn ? 'Contract:' : 'Bulan:' }} {{ metal.contractMonth }}</span>
+                        <span class="in-dot">•</span>
+                        <span class="in-unit">{{ metal.unit }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="in-sparkline" *ngIf="metal.history && metal.history.length > 1">
+                    <svg viewBox="0 0 80 28" preserveAspectRatio="none">
+                      <polyline [attr.points]="getIndustrialMetalSparklinePoints(metal.history)" fill="none"
+                        [attr.stroke]="metal.trend === 'up' ? '#10b981' : (metal.trend === 'down' ? '#ef4444' : '#64748b')"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </div>
+
+                  <div class="in-item-right">
+                    <div class="in-usd-price">{{ formatUsd(metal.priceUsd) }}</div>
+                    <div class="in-idr-price">{{ formatIdrPrice(metal.priceIdr) }} / {{ metal.idrUnit.replace('Rp / ',
+                      '') }}</div>
+                    <div class="in-change-pill" [class.up]="metal.trend === 'up'" [class.down]="metal.trend === 'down'"
+                      [class.stable]="metal.trend === 'stable'">
+                      <ion-icon
+                        [name]="metal.trend === 'up' ? 'arrow-up' : (metal.trend === 'down' ? 'arrow-down' : 'remove')"></ion-icon>
+                      <span>{{ metal.changePercent > 0 ? '+' : '' }}{{ metal.changePercent | number:'1.2-2' }}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="in-empty-notice" *ngIf="filteredIndustrialMetals.length === 0 && industrialMetals.length > 0">
+                <ion-icon name="search-outline"></ion-icon>
+                <span>{{ isEn ? 'No metals match your search.' : 'Tidak ada logam yang cocok dengan pencarian Anda.' }}</span>
+              </div>
+            </div>
+
+            <!-- Attribution Footer -->
+            <div class="lm-source-footer">
+              <ion-icon name="shield-checkmark-outline"></ion-icon>
+              <div class="lm-footer-text">
+                <span>{{ isEn ? 'Data source: ' : 'Sumber data: ' }}<a [href]="officialInvestingMetalsUrl" target="_blank"
+                    rel="noopener noreferrer">id.investing.com/commodities/metals</a> (Investing.com Komoditas Logam
+                  &amp; Berjangka).</span>
+                <span>{{ isEn ? 'Global market reference data (COMEX, LME, SGX, NYMEX) with current IDR conversion estimates.' : 'Data acuan pasar global (COMEX, LME, SGX, NYMEX) dengan estimasi konversi IDR terkini.' }}</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Other Categories Fallback -->
+          <ng-container
+            *ngIf="category.name !== 'Mata Uang' && category.name !== 'Emas & Logam Mulia' && category.name !== 'Saham & Indeks' && category.name !== 'Komoditas' && category.name !== 'Logam Industri'">
+            <div class="market-price-instrument-list">
+              <div class="market-price-instrument" *ngFor="let instrument of category.instruments">
+                <div class="instrument-info">
+                  <ion-icon [name]="category.icon"></ion-icon>
+                  <span>{{ instrument }}</span>
+                </div>
+                <span class="instrument-unavailable">Belum tersedia</span>
+              </div>
+            </div>
+            <p class="market-price-notice">
+              Data harga belum tersedia. Harga dan waktu pembaruan akan muncul setelah sumber data terhubung.
+            </p>
+          </ng-container>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 2: GRAFIK KEUANGAN (Screenshot 4)     -->
+      <!-- ========================================== -->
+      <section class="screen-view view-charts" *ngIf="activeView === 'charts'" (click)="closeChartSelectMenus()">
+        <!-- Coral Header Bar -->
+        <div class="top-nav-bar header-coral chart-header">
+          <div class="header-row-1">
+            <div class="back-link" (click)="goBackToPreviousView()">
+              <ion-icon name="chevron-back-outline"></ion-icon>
+              <span>{{ i18n.t('nav.chart') }}</span>
+            </div>
+            <div class="type-pill-selector"
+              (click)="chartType = (chartType === 'expense' ? 'income' : 'expense'); calculateFinancialChart()">
+              <span>{{ chartType === 'expense' ? i18n.t('report.expense') : i18n.t('report.income') }}</span>
+              <ion-icon name="chevron-down-outline"></ion-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subheader: Month navigator & Period dropdown -->
+        <div class="chart-subheader">
+          <div class="month-nav" [class.weekly]="chartPeriod === 'weekly'">
+            <ng-container *ngIf="chartPeriod === 'weekly'; else chartMonthNavigation">
+              <button type="button" class="nav-arrow-dark"
+                [attr.aria-label]="isEn ? 'Previous week' : 'Minggu sebelumnya'"
+                (click)="navigateChartWeek(-1)">&lt;</button>
+              <span class="month-nav-label week-range-label">{{ getChartWeekRangeLabel() }}</span>
+              <button type="button" class="nav-arrow-dark"
+                [attr.aria-label]="isEn ? 'Next week' : 'Minggu berikutnya'"
+                (click)="navigateChartWeek(1)">&gt;</button>
+            </ng-container>
+            <ng-template #chartMonthNavigation>
+              <button class="nav-arrow-dark" (click)="prevMonth()">&lt;</button>
+              <button type="button" class="month-nav-label" (click)="toggleMonthPicker()"
+                [attr.aria-expanded]="isMonthPickerOpen" aria-haspopup="true">
+                {{ getMonthName(selectedMonth) }} {{ selectedYear }}
+              </button>
+              <button class="nav-arrow-dark" (click)="nextMonth()">&gt;</button>
+            </ng-template>
+          </div>
+          <div class="period-select-box">
+            <button type="button" class="chart-select-trigger" (click)="toggleChartPeriodMenu(); $event.stopPropagation()"
+              [attr.aria-expanded]="isChartPeriodMenuOpen" aria-haspopup="menu">
+              <span>{{ getChartPeriodLabel(chartPeriod) }}</span>
+              <ion-icon name="chevron-down-outline"></ion-icon>
+            </button>
+            <div class="chart-select-menu period-menu" *ngIf="isChartPeriodMenuOpen" role="menu"
+              [attr.aria-label]="isEn ? 'Chart period' : 'Periode grafik'" (click)="$event.stopPropagation()">
+              <button type="button" role="menuitemradio" *ngFor="let period of chartPeriodOptions"
+                [attr.aria-checked]="chartPeriod === period"
+                [class.selected]="chartPeriod === period" (click)="selectChartPeriod(period)">
+                <span>{{ getChartPeriodLabel(period) }}</span>
+                <ion-icon *ngIf="chartPeriod === period" name="checkmark-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-period-custom" *ngIf="chartPeriod === 'custom'">
+          <label>
+            {{ isEn ? 'Start date' : 'Dari tanggal' }}
+            <input type="date" [(ngModel)]="chartCustomStartDate" (change)="calculateFinancialChart()" />
+          </label>
+          <label>
+            {{ isEn ? 'End date' : 'Sampai tanggal' }}
+            <input type="date" [(ngModel)]="chartCustomEndDate" (change)="calculateFinancialChart()" />
+          </label>
+          <p class="chart-period-error" *ngIf="!isCustomChartRangeValid">
+            {{ isEn ? 'Choose a valid start and end date.' : 'Pilih tanggal awal dan akhir yang valid.' }}
+          </p>
+        </div>
+
+        <div class="month-picker-overlay-backdrop chart-month-picker-overlay" *ngIf="isMonthPickerOpen"
+          (click)="closeMonthPicker()">
+          <div class="month-picker-panel" (click)="$event.stopPropagation()">
+            <div class="picker-year-header">
+              <button class="picker-arrow-btn" (click)="pickerPrevYear()" title="Tahun Sebelumnya">&lt;</button>
+              <span class="picker-year-title">{{ pickerYear }}</span>
+              <button class="picker-arrow-btn" (click)="pickerNextYear()" title="Tahun Selanjutnya">&gt;</button>
+            </div>
+            <div class="picker-months-grid">
+              <button *ngFor="let m of monthNamesList; let i = index" class="picker-month-btn"
+                [class.active-month]="selectedMonth === (i + 1) && selectedYear === pickerYear"
+                (click)="selectMonth(i + 1)">
+                {{ m }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Donut Chart & Category Breakdown -->
+        <div class="charts-scroll-area">
+          <div class="donut-chart-container">
+            <svg class="donut-svg" viewBox="0 0 200 200">
+              <circle cx="100" cy="100" r="65" fill="none" stroke="#f1f5f9" stroke-width="30"></circle>
+              <circle *ngFor="let s of categoryShares" cx="100" cy="100" r="65" fill="none" [attr.stroke]="s.color"
+                stroke-width="30" [attr.stroke-dasharray]="s.strokeDasharray"
+                [attr.stroke-dashoffset]="s.strokeDashoffset" transform="rotate(-90 100 100)"></circle>
+            </svg>
+            <div class="donut-center-text">
+              <div class="center-total">{{ financeService.formatMoney(totalChartAmount).replace('Rp', '') }}</div>
+            </div>
+            <div class="chart-percent-badge pct-top-right" *ngIf="categoryShares.length > 0">
+              {{ categoryShares[0]?.percentage | number:'1.1-1' }}%
+            </div>
+            <div class="chart-percent-badge pct-bottom-right" *ngIf="categoryShares.length > 1">
+              {{ categoryShares[1]?.percentage | number:'1.1-1' }}%
+            </div>
+            <div class="chart-percent-badge pct-bottom-left" *ngIf="categoryShares.length > 2">
+              {{ categoryShares[2]?.percentage | number:'1.1-1' }}%
+            </div>
+            <div class="chart-percent-badge pct-top-left" *ngIf="categoryShares.length > 3">
+              {{ categoryShares[3]?.percentage | number:'1.1-1' }}%
+            </div>
+          </div>
+
+          <div class="category-list-header">
+            <div class="cat-count">
+              <ion-icon name="document-text-outline"></ion-icon>
+              <span>{{ categoryShares.length }} {{ i18n.t('chart.allCategories') }}</span>
+            </div>
+            <div class="sort-selector">
+              <button type="button" class="chart-select-trigger" (click)="toggleChartSortMenu(); $event.stopPropagation()"
+                [attr.aria-expanded]="isChartSortMenuOpen" aria-haspopup="menu">
+                <span>{{ getChartSortLabel(chartSort) }}</span>
+                <ion-icon name="chevron-down-outline"></ion-icon>
+              </button>
+              <div class="chart-select-menu sort-menu" *ngIf="isChartSortMenuOpen" role="menu"
+                [attr.aria-label]="isEn ? 'Sort categories' : 'Urutkan kategori'" (click)="$event.stopPropagation()">
+                <button type="button" role="menuitemradio" *ngFor="let sort of chartSortOptions"
+                  [attr.aria-checked]="chartSort === sort"
+                  [class.selected]="chartSort === sort" (click)="selectChartSort(sort)">
+                  <span>{{ getChartSortLabel(sort) }}</span>
+                  <ion-icon *ngIf="chartSort === sort" name="checkmark-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="category-share-list">
+            <div class="category-share-item" *ngFor="let s of categoryShares" (click)="openCategoryDetail(s.category)">
+              <div class="cat-left">
+                <div class="cat-label-row">
+                  <span class="pct-text">({{ s.percentage | number:'1.1-1' }}%)</span>
+                  <span class="cat-name">{{ getCategoryDisplayName(s.category) }}</span>
+                </div>
+                <div class="cat-color-bar" [style.background-color]="s.color"></div>
+              </div>
+              <div class="cat-right">
+                <span class="cat-amount">{{ financeService.formatMoney(s.total) }}</span>
+                <ion-icon name="chevron-forward-outline" class="chevron-icon"></ion-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- ========================================== -->
+      <!-- VIEW 3: GRAFIK PER KATEGORI (Screenshot 2) -->
+      <!-- ========================================== -->
+      <section class="screen-view view-category-detail"
+        *ngIf="activeView === 'category_detail' && selectedCategoryForDetail">
+        <div class="top-nav-bar header-coral">
+          <div class="header-row-1">
+            <div class="back-link" (click)="goBackToPreviousView('charts')" title="Kembali ke Grafik">
+              <ion-icon name="arrow-back-outline"></ion-icon>
+              <span>{{ selectedCategoryForDetail.name }}</span>
+            </div>
+            <div class="month-selector-white">
+              <button class="nav-arrow-white" (click)="prevMonth()">&lt;</button>
+              <button type="button" class="month-selector-label" (click)="toggleMonthPicker()"
+                [attr.aria-expanded]="isMonthPickerOpen" aria-haspopup="true">
+                {{ getMonthName(selectedMonth) }} {{ selectedYear }}
+              </button>
+              <button class="nav-arrow-white" (click)="nextMonth()">&gt;</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="month-picker-overlay-backdrop category-month-picker-overlay" *ngIf="isMonthPickerOpen"
+          (click)="closeMonthPicker()">
+          <div class="month-picker-panel" (click)="$event.stopPropagation()">
+            <div class="picker-year-header">
+              <button class="picker-arrow-btn" (click)="pickerPrevYear()"
+                [title]="isEn ? 'Previous year' : 'Tahun Sebelumnya'">&lt;</button>
+              <span class="picker-year-title">{{ pickerYear }}</span>
+              <button class="picker-arrow-btn" (click)="pickerNextYear()"
+                [title]="isEn ? 'Next year' : 'Tahun Selanjutnya'">&gt;</button>
+            </div>
+            <div class="picker-months-grid">
+              <button *ngFor="let m of monthNamesList; let i = index" class="picker-month-btn"
+                [class.active-month]="selectedMonth === (i + 1) && selectedYear === pickerYear"
+                (click)="selectMonth(i + 1)">
+                {{ m }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="trend-chart-card">
+          <div class="trend-chart-wrapper">
+            <div class="y-axis">
+              <span *ngFor="let tick of categoryYAxisTicks">{{ tick.label }}</span>
+            </div>
+            <div class="chart-canvas-area">
+              <svg class="trend-svg" viewBox="0 0 340 150">
+                <!-- Outer border box matching Screenshot 2 -->
+                <rect x="25" y="15" width="305" height="120" fill="#f8fafc" stroke="#222222" stroke-width="1.2" />
+
+                <!-- Horizontal dashed grid lines -->
+                <line *ngFor="let tick of categoryYAxisTicks" x1="25" [attr.y1]="15 + (1 - tick.ratio) * 120" x2="330"
+                  [attr.y2]="15 + (1 - tick.ratio) * 120" stroke="#94a3b8" stroke-dasharray="2,3" />
+
+                <!-- Vertical dashed grid lines -->
+                <line *ngFor="let pt of categoryTrendMonths" [attr.x1]="pt.x" y1="15" [attr.x2]="pt.x" y2="135"
+                  stroke="#94a3b8" stroke-dasharray="2,3" />
+
+                <!-- Area fill under line -->
+                <path [attr.d]="categoryAreaPath" fill="#8ae38a" fill-opacity="0.85" />
+
+                <!-- Dashed trend line -->
+                <path [attr.d]="categoryTrendPath" fill="none" stroke="#15803d" stroke-width="1.8"
+                  stroke-dasharray="4,2" />
+
+                <!-- Black point circles -->
+                <circle *ngFor="let pt of categoryTrendMonths" [attr.cx]="pt.x" [attr.cy]="pt.y" r="3.2"
+                  fill="#000000" />
+              </svg>
+              <div class="x-axis">
+                <span *ngFor="let pt of categoryTrendMonths">{{ pt.label }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cat-summary-bar">
+          <div class="calendar-sheet-badge">
+            <div class="cal-top-red">{{ selectedYear }}</div>
+            <div class="cal-bot-white">{{ selectedMonth }}</div>
+          </div>
+          <div class="cat-total-box">
+            <span class="lbl">Total</span>
+            <span class="val">{{ financeService.formatMoney(getCategoryCurrentMonthTotal()) }}</span>
+          </div>
+          <div class="cat-sort-pill">
+            <select [(ngModel)]="categoryDetailSort" (change)="calculateCategoryDetailTrend()" class="select-clean">
+              <option value="latest">Terbaru</option>
+              <option value="oldest">Terlama</option>
+            </select>
+            <ion-icon name="chevron-down-outline" class="pill-down-icon"></ion-icon>
+          </div>
+        </div>
+
+        <div class="cat-daily-scroll">
+          <div class="day-group" *ngFor="let group of categoryDailyGroups">
+            <div class="day-header-row">
+              <div class="day-badge-wrap">
+                <span class="day-num">{{ group.dayNumber }}</span>
+                <div class="day-label-stack">
+                  <span class="day-sub-period">{{ group.monthYear }}</span>
+                  <span class="day-sub-pill">{{ group.dayName }}</span>
+                </div>
+              </div>
+              <div class="day-totals">
+                <span class="inc-amt">{{ financeService.formatMoney(group.income) }}</span>
+                <span class="exp-amt">{{ financeService.formatMoney(group.expense) }}</span>
+              </div>
+            </div>
+            <div class="tx-row" *ngFor="let tx of group.transactions"
+              (click)="openEditTransaction(tx, 'category_detail')">
+              <div class="tx-left">
+                <span class="tx-cat">{{ tx.categoryName }}</span>
+              </div>
+              <div class="tx-mid">
+                <span class="tx-desc">{{ tx.note || '-' }}</span>
+              </div>
+              <div class="tx-right exp-amt">
+                {{ financeService.formatMoney(tx.amount) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 7: KELOLA KATEGORI (Screenshot 1)     -->
+      <!-- ========================================== -->
+      <section class="screen-view view-categories" *ngIf="activeView === 'categories'">
+        <!-- Coral Red Header matching Screenshot 1 -->
+        <div class="top-nav-bar header-coral">
+          <div class="header-row-1">
+            <div class="back-link" (click)="goBackToPreviousView()"
+              [title]="isEn ? 'Back to Report' : 'Kembali ke Laporan'">
+              <ion-icon name="arrow-back-outline"></ion-icon>
+              <span>{{ isEn ? 'Categories' : 'Kategori' }}</span>
+            </div>
+            <button class="header-cat-plus-btn" (click)="openAddCategoryModal()"
+              [title]="isEn ? 'Add Category' : 'Tambah Kategori'">
+              <ion-icon name="add-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Segment: Expense / Income -->
+        <div class="category-segment-container">
+          <div class="category-tabs-pill">
+            <button class="cat-tab-btn" [class.active]="categoryTab === 'expense'" (click)="categoryTab = 'expense'">
+              {{ isEn ? 'Expense' : 'Pengeluaran' }}
+            </button>
+            <button class="cat-tab-btn" [class.active]="categoryTab === 'income'" (click)="categoryTab = 'income'">
+              {{ isEn ? 'Income' : 'Pemasukan' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Category Items List matching Screenshot 1 -->
+        <div class="category-items-scroll">
+          <div class="category-white-card">
+            <div class="category-list-row" *ngFor="let cat of getFilteredCategories(categoryTab)">
+              <span class="cat-row-name">{{ getCategoryDisplayName(cat) }}</span>
+              <div class="cat-row-actions">
+                <button class="cat-action-icon-btn" (click)="openEditCategoryModal(cat)"
+                  [title]="isEn ? 'Edit name' : 'Ubah Nama'">
+                  <ion-icon name="create-outline"></ion-icon>
+                </button>
+                <button class="cat-action-icon-btn" (click)="deleteCategory(cat.id)"
+                  [title]="isEn ? 'Delete category' : 'Hapus Kategori'">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen-view view-savings" *ngIf="activeView === 'savings'">
+        <header class="savings-header">
+          <button type="button" class="savings-back-button" (click)="goBackToPreviousView()"
+            [attr.aria-label]="isEn ? 'Back' : 'Kembali'">
+            <ion-icon name="arrow-back-outline"></ion-icon>
+          </button>
+          <h1>{{ isEn ? 'Savings' : 'Nabung' }}</h1>
+          <span class="savings-header-spacer"></span>
+        </header>
+
+        <div class="savings-tabs" role="tablist">
+          <button type="button" role="tab" [attr.aria-selected]="savingsTab === 'ongoing'"
+            [class.active]="savingsTab === 'ongoing'" (click)="savingsTab = 'ongoing'">
+            {{ isEn ? 'Ongoing' : 'Berlangsung' }}
+          </button>
+          <button type="button" role="tab" [attr.aria-selected]="savingsTab === 'achieved'"
+            [class.active]="savingsTab === 'achieved'" (click)="savingsTab = 'achieved'">
+            {{ isEn ? 'Achieved' : 'Tercapai' }}
+          </button>
+        </div>
+
+        <div class="savings-sort-controls">
+          <label>
+            <span class="sr-only">{{ isEn ? 'Sort savings goals by' : 'Urutkan celengan berdasarkan' }}</span>
+            <ion-icon name="list-outline" aria-hidden="true"></ion-icon>
+            <select [(ngModel)]="savingsSortBy">
+              <option value="name">{{ isEn ? 'Savings name' : 'Nama Tabungan' }}</option>
+              <option value="targetAmount">{{ isEn ? 'Target amount' : 'Target' }}</option>
+              <option value="progress">{{ isEn ? 'Progress' : 'Progres' }}</option>
+            </select>
+            <ion-icon name="chevron-down-outline" aria-hidden="true"></ion-icon>
+          </label>
+          <label>
+            <span class="sr-only">{{ isEn ? 'Sort direction' : 'Arah pengurutan' }}</span>
+            <ion-icon [name]="savingsSortDirection === 'asc' ? 'chevron-up-outline' : 'chevron-down-outline'"
+              aria-hidden="true"></ion-icon>
+            <select [(ngModel)]="savingsSortDirection">
+              <option value="asc">{{ isEn ? 'Ascending' : 'Meningkat' }}</option>
+              <option value="desc">{{ isEn ? 'Descending' : 'Menurun' }}</option>
+            </select>
+            <ion-icon name="chevron-down-outline" aria-hidden="true"></ion-icon>
+          </label>
+        </div>
+
+        <div class="savings-list">
+          <div class="savings-storage-error" *ngIf="savingsStorageError" role="alert">
+            {{ savingsStorageError }}
+          </div>
+          <div class="savings-empty-state" *ngIf="filteredSavingsGoals.length === 0 && !savingsStorageError">
+            <ion-icon name="list-outline" aria-hidden="true"></ion-icon>
+            <p>{{ isEn ? 'No data to display.' : 'Tidak ada data untuk ditampilkan.' }}</p>
+          </div>
+
+          <article class="savings-goal-card" *ngFor="let goal of filteredSavingsGoals">
+            <div class="savings-goal-heading">
+              <div>
+                <h2>{{ goal.name }}</h2>
+                <span class="savings-goal-status">
+                  {{ savingsTab === 'achieved' ? (isEn ? 'Achieved' : 'Tercapai') : (isEn ? 'Ongoing' : 'Berlangsung') }}
+                </span>
+              </div>
+              <button type="button" class="savings-delete-button" (click)="deleteSavingGoal(goal)"
+                [attr.aria-label]="(isEn ? 'Delete ' : 'Hapus ') + goal.name">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+            <div class="savings-progress-labels">
+              <span>{{ formatSavingsMoney(goal.savedAmount, goal.currency) }}</span>
+              <span>{{ formatSavingsMoney(goal.targetAmount, goal.currency) }}</span>
+            </div>
+            <div class="savings-progress-track" role="progressbar"
+              [attr.aria-valuenow]="getSavingsProgress(goal)" aria-valuemin="0" aria-valuemax="100">
+              <span [style.width.%]="getSavingsProgress(goal)"></span>
+            </div>
+            <div class="savings-goal-footer">
+              <span>{{ getSavingsProgress(goal) }}% {{ isEn ? 'saved' : 'terkumpul' }}</span>
+              <button type="button" *ngIf="savingsTab === 'ongoing'" (click)="openContributionModal(goal)">
+                <ion-icon name="add-outline"></ion-icon>
+                {{ isEn ? 'Record Savings' : 'Catat Tabungan' }}
+              </button>
+            </div>
+            <section class="savings-achievement-details" *ngIf="savingsTab === 'achieved'">
+              <button type="button" class="savings-achievement-toggle"
+                (click)="toggleAchievementDetails(goal.id)"
+                [attr.aria-expanded]="expandedAchievementGoalIds.has(goal.id)"
+                [attr.aria-label]="expandedAchievementGoalIds.has(goal.id)
+                  ? (isEn ? 'Hide achievement details' : 'Tutup rincian pencapaian')
+                  : (isEn ? 'Show achievement details' : 'Buka rincian pencapaian')">
+                <span>
+                  {{ isEn ? 'Reached in' : 'Tercapai dalam waktu' }}
+                  <ng-container *ngIf="getSavingsDurationDays(goal) !== null; else durationUnavailable">
+                    {{ getSavingsDurationDays(goal) }} {{ isEn ? 'days' : 'Hari' }}
+                  </ng-container>
+                  <ng-template #durationUnavailable>{{ isEn ? 'Not available' : 'Belum tersedia' }}</ng-template>
+                </span>
+                <ion-icon [name]="expandedAchievementGoalIds.has(goal.id)
+                  ? 'chevron-up-outline'
+                  : 'chevron-down-outline'" aria-hidden="true"></ion-icon>
+              </button>
+              <div class="savings-achievement-expanded" *ngIf="expandedAchievementGoalIds.has(goal.id)">
+                <dl class="savings-achievement-dates">
+                  <div>
+                    <dt>{{ isEn ? 'Created on' : 'Tanggal Dibuat' }}</dt>
+                    <dd>{{ formatSavingsDate(goal.createdAt) }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ isEn ? 'Achieved on' : 'Tanggal Tercapai' }}</dt>
+                    <dd>{{ formatSavingsDate(goal.achievedAt) }}</dd>
+                  </div>
+                </dl>
+                <ng-container *ngIf="goal.contributions?.length; else contributionHistoryUnavailable">
+                  <ul class="savings-contribution-history">
+                    <li *ngFor="let contribution of goal.contributions">
+                      <time [attr.datetime]="contribution.contributedAt">
+                        {{ formatSavingsDateTime(contribution.contributedAt) }}
+                      </time>
+                      <strong [class.savings-withdrawal]="contribution.action === 'subtract'">
+                        {{ contribution.action === 'subtract' ? '−' : '+' }}
+                        {{ formatSavingsMoney(contribution.amount, goal.currency) }}
+                      </strong>
+                      <span class="savings-contribution-note" *ngIf="contribution.note">{{ contribution.note }}</span>
+                    </li>
+                  </ul>
+                </ng-container>
+                <ng-template #contributionHistoryUnavailable>
+                  <p class="savings-contribution-history-unavailable">
+                    {{ isEn ? 'Contribution history is not available.' : 'Riwayat setoran belum tersedia.' }}
+                  </p>
+                </ng-template>
+              </div>
+            </section>
+            <p class="savings-goal-estimate"
+              *ngIf="savingsTab === 'ongoing' && goal.plannedContributionAmount && goal.contributionFrequency">
+              <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+              {{ isEn ? 'Estimated to reach target:' : 'Estimasi target tercapai:' }}
+              {{ formatSavingsEstimatedDate(getSavingsEstimatedCompletionDate(
+                goal.targetAmount,
+                goal.savedAmount,
+                goal.plannedContributionAmount,
+                goal.contributionFrequency
+              )) }}
+            </p>
+          </article>
+        </div>
+
+        <button type="button" class="savings-add-button" (click)="openSavingGoalModal()">
+          <ion-icon name="add-outline"></ion-icon>
+          {{ isEn ? 'Add Savings Goal' : 'Tambah Celengan' }}
+        </button>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 4: FITUR PENCARIAN (Screenshot 5)     -->
+      <!-- ========================================== -->
+      <!-- ========================================== -->
+      <!-- VIEW 4: FITUR PENCARIAN (Screenshot 1)     -->
+      <!-- ========================================== -->
+      <section class="screen-view view-search" *ngIf="activeView === 'search'">
+        <!-- Red/Coral Header (Matches Screenshot 1) -->
+        <div class="top-nav-bar header-coral">
+          <div class="header-row-1">
+            <div class="search-nav-left" (click)="goBackToPreviousView()"
+              [title]="isEn ? 'Back to Report' : 'Kembali ke Laporan'">
+              <ion-icon name="arrow-back-outline" class="search-back-arrow"></ion-icon>
+              <span class="search-nav-title">{{ isEn ? 'Search' : 'Pencarian' }}</span>
+            </div>
+            <button class="search-total-btn" (click)="isSearchSummaryVisible = !isSearchSummaryVisible"
+              [title]="isEn ? 'Toggle totals' : 'Tampilkan Total'" [attr.aria-expanded]="isSearchSummaryVisible">
+              <span>Total</span>
+              <ion-icon name="chevron-down-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Search Keyword Input Bar -->
+        <div class="search-keyword-bar">
+          <ion-icon name="search-outline" class="keyword-icon"></ion-icon>
+          <input type="text" [(ngModel)]="searchKeyword"
+            [placeholder]="isEn ? 'Keyword' : 'Kata Kunci'" class="keyword-input"
+            [attr.aria-label]="isEn ? 'Search keyword' : 'Kata kunci pencarian'" />
+          <button class="clear-keyword-btn" *ngIf="searchKeyword" (click)="searchKeyword = ''"
+            [attr.aria-label]="isEn ? 'Clear keyword' : 'Hapus kata kunci'">&times;</button>
+        </div>
+
+        <!-- Collapsible Filter Box (Matches Screenshot 1) -->
+        <div class="search-filter-panel">
+          <div class="filter-inputs-section" *ngIf="isSearchFilterOpen">
+            <!-- Row: Kategori -->
+            <div class="filter-spec-row">
+              <span class="filter-spec-label">{{ isEn ? 'Category' : 'Kategori' }}</span>
+              <div class="filter-box-pill">
+                <select [(ngModel)]="searchCategoryId" class="filter-pill-select">
+                  <option value="">{{ isEn ? 'All' : 'Semua' }}</option>
+                  <option *ngFor="let c of categories" [value]="c.id">{{ getCategoryDisplayName(c) }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Row: Jumlah (Min - Max) -->
+            <div class="filter-spec-row">
+              <span class="filter-spec-label">{{ isEn ? 'Amount' : 'Jumlah' }}</span>
+              <div class="filter-amount-row">
+                <div class="amount-min-max-box">
+                  <input type="number" [(ngModel)]="searchMinAmount"
+                    [placeholder]="isEn ? 'Min' : 'Min'" class="amount-clean-input"
+                    [attr.aria-label]="isEn ? 'Minimum amount' : 'Jumlah minimum'">
+                </div>
+                <span class="amount-dash">-</span>
+                <div class="amount-min-max-box">
+                  <input type="number" [(ngModel)]="searchMaxAmount"
+                    [placeholder]="isEn ? 'Max' : 'Max'" class="amount-clean-input"
+                    [attr.aria-label]="isEn ? 'Maximum amount' : 'Jumlah maksimum'">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Centered Toggle Chevron (︽ / ︾) -->
+          <div class="filter-collapse-toggle" (click)="isSearchFilterOpen = !isSearchFilterOpen"
+            [title]="isEn ? 'Show/Hide Filters' : 'Buka/Tutup Filter'"
+            [attr.aria-label]="isEn ? 'Show or hide filters' : 'Buka atau tutup filter'"
+            [attr.aria-expanded]="isSearchFilterOpen">
+            <ion-icon [name]="isSearchFilterOpen ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+          </div>
+        </div>
+
+        <!-- Search Summary Strip (toggled by Total button) -->
+        <div class="search-summary-strip" *ngIf="isSearchSummaryVisible">
+          <div class="search-summary-col">
+            <span class="label">{{ i18n.t('report.income') }}</span>
+            <span class="val inc">{{ financeService.formatMoney(getSearchStats().income) }}</span>
+          </div>
+          <div class="search-summary-col">
+            <span class="label">{{ i18n.t('report.expense') }}</span>
+            <span class="val exp">{{ financeService.formatMoney(getSearchStats().expense) }}</span>
+          </div>
+          <div class="search-summary-col">
+            <span class="label">{{ i18n.t('report.balance') }}</span>
+            <span class="val bal">{{ financeService.formatMoney(getSearchStats().balance) }}</span>
+          </div>
+        </div>
+
+        <!-- Search Results Scroll Area (Canvas matching Screenshot 1) -->
+        <div class="search-results-canvas">
+          <div class="search-results-list" *ngIf="getFilteredTransactions().length > 0">
+            <div class="search-result-card" *ngFor="let tx of getFilteredTransactions()"
+              (click)="openEditTransaction(tx, 'search')">
+              <div class="res-left">
+                <div class="res-meta">{{ tx.date | date:'dd MMM yyyy' }} &bull; {{ getTxCategoryName(tx) }}</div>
+                <div class="res-note">{{ tx.note || '-' }}</div>
+              </div>
+              <div class="res-right" [class.exp-amt]="tx.type === 'expense'" [class.inc-amt]="tx.type === 'income'">
+                {{ tx.type === 'expense' ? '-' : '+' }} {{ financeService.formatMoney(tx.amount) }}
+              </div>
+            </div>
+          </div>
+          <div class="search-empty-state" *ngIf="getFilteredTransactions().length === 0">
+            <ion-icon name="search-outline"></ion-icon>
+            <span>{{ isEn ? 'No transactions match your search.' : 'Tidak ada transaksi yang sesuai dengan pencarian.' }}</span>
+          </div>
+        </div>
+
+        <!-- Fixed Red Bottom Bar with Centered Download Icon (Matches Screenshot 1) -->
+        <button type="button" class="search-bottom-bar" (click)="exportSearchResults()"
+          [title]="isEn ? 'Export search results' : 'Ekspor Hasil Pencarian'"
+          [attr.aria-label]="isEn ? 'Export search results' : 'Ekspor Hasil Pencarian'">
+          <ion-icon name="download-outline"></ion-icon>
+        </button>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 5: PENGATURAN (Settings & Features)   -->
+      <!-- ========================================== -->
+      <section class="screen-view view-settings" *ngIf="activeView === 'settings'">
+        <!-- Red Coral Top Bar: ← Pengaturan -->
+        <div class="top-nav-bar header-coral">
+          <div class="header-row-1">
+            <div class="settings-nav-left" (click)="goBackToPreviousView()"
+              [title]="isEn ? 'Back to Report' : 'Kembali ke Laporan'">
+              <ion-icon name="arrow-back-outline" class="settings-back-arrow"></ion-icon>
+              <span class="settings-nav-title">{{ isEn ? 'Settings' : 'Pengaturan' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-list-scroll">
+          <div class="settings-card-group">
+            <!-- 0. Profile (Edit Password) -->
+            <div class="settings-nav-item" (click)="openProfileModal()">
+              <div class="item-text-stack">
+                <span class="item-main-title">{{ isEn ? 'Profile' : 'Profile' }}</span>
+                <span class="item-sub-coral">{{ isEn ? 'Edit password' : 'Edit kata sandi' }}</span>
+              </div>
+              <ion-icon name="chevron-forward-outline" class="item-chevron"></ion-icon>
+            </div>
+
+            <!-- 1. Atur Warna Tema -->
+            <div class="settings-nav-item" (click)="openSettingPicker('theme')">
+              <div class="item-text-stack">
+                <span class="item-main-title">{{ isEn ? 'Theme Color' : 'Atur Warna Tema' }}</span>
+                <span class="item-sub-coral">{{ settingThemeName }}</span>
+              </div>
+              <ion-icon name="chevron-forward-outline" class="item-chevron"></ion-icon>
+            </div>
+
+            <!-- 2. Format Mata Uang -->
+            <div class="settings-nav-item" (click)="openSettingPicker('currency')">
+              <div class="item-text-stack">
+                <span class="item-main-title">{{ isEn ? 'Currency Format' : 'Format Mata Uang' }}</span>
+                <span class="item-sub-coral">{{ settingCurrencyLabel }}</span>
+              </div>
+              <ion-icon name="chevron-forward-outline" class="item-chevron"></ion-icon>
+            </div>
+
+            <!-- 3. Pilih Bahasa -->
+            <div class="settings-nav-item" (click)="openSettingPicker('language')">
+              <div class="item-text-stack">
+                <span class="item-main-title">{{ isEn ? 'Language' : 'Pilih Bahasa' }}</span>
+                <span class="item-sub-coral">{{ settingLanguageLabel }}</span>
+              </div>
+              <ion-icon name="chevron-forward-outline" class="item-chevron"></ion-icon>
+            </div>
+
+            <!-- 4. Ruangan Bersama (Exact placement requested) -->
+            <div class="settings-nav-item" (click)="(activeRoom && isUserMemberOfActiveRoom()) ? openRoomDetailsModal() : openRoomSetup()">
+              <div class="item-text-stack">
+                <span class="item-main-title">{{ isEn ? 'Shared Room' : 'Ruangan Bersama' }}</span>
+                <span class="item-sub-coral">{{ (activeRoom && isUserMemberOfActiveRoom()) ? activeRoom.name + ' (' + activeRoom.members.length + ' ' + (isEn ? (activeRoom.members.length === 1 ? 'member' : 'members') : 'anggota') + ')' : (isEn ? 'Not joined / Create room' : 'Belum bergabung / Buat ruang') }}</span>
+              </div>
+              <ion-icon name="people-outline" class="item-chevron"></ion-icon>
+            </div>
+
+            <div class="settings-nav-item" role="button" tabindex="0"
+              (click)="logoutFromApp()" (keydown.enter)="logoutFromApp()" (keydown.space)="logoutFromApp()">
+              <div class="item-text-stack">
+                <span class="item-main-title">{{ isEn ? 'Log out' : 'Keluar dari akun' }}</span>
+              </div>
+              <ion-icon name="log-out-outline" class="item-chevron"></ion-icon>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW: RUANGAN BERSAMA (Bilingual)          -->
+      <!-- ========================================== -->
+      <section class="screen-view view-room-setup" *ngIf="activeView === 'room_setup'">
+        <div class="top-nav-bar header-coral room-header-coral">
+          <div class="header-row-1">
+            <span class="room-nav-title">{{ isEn ? 'Shared Finance Room' : 'Ruang Keuangan Bersama' }}</span>
+          </div>
+        </div>
+
+        <div class="room-setup-content">
+          <div class="room-setup-header">
+            <h2>{{ isEn ? 'Choose Room Option' : 'Pilih Opsi Ruangan' }}</h2>
+            <p>{{ isEn ? 'Manage finances and savings together with roommates, partner, or family.' : 'Kelola catatan keuangan dan tabungan bersama teman kos, pasangan, atau keluarga.' }}</p>
+          </div>
+
+          <!-- Two Action Cards -->
+          <div class="room-action-cards-grid">
+            <div class="room-action-card-item" (click)="openCreateRoomModal()">
+              <div class="card-circle-icon blue">
+                <ion-icon name="add-circle-outline"></ion-icon>
+              </div>
+              <div class="card-main-title">{{ isEn ? 'Create Room' : 'Buat ruang' }}</div>
+              <div class="card-sub-title">{{ isEn ? 'Get invite code' : 'Mendapat kode undangan' }}</div>
+            </div>
+
+            <div class="room-action-card-item" (click)="openJoinRoomModal()">
+              <div class="card-circle-icon green">
+                <ion-icon name="key-outline"></ion-icon>
+              </div>
+              <div class="card-main-title">{{ isEn ? 'Join Room' : 'Gabung ruang' }}</div>
+              <div class="card-sub-title">{{ isEn ? 'Enter invite code' : 'Masukkan kode undangan' }}</div>
+            </div>
+          </div>
+
+          <!-- User's Saved Rooms List -->
+          <div class="user-saved-rooms-block" *ngIf="getUserRooms().length > 0">
+            <div class="saved-rooms-header">
+              <span class="saved-rooms-title">{{ isEn ? 'Your Saved Rooms' : 'Ruangan Anda Tersimpan' }}</span>
+              <span class="rooms-count-pill">{{ getUserRooms().length }} {{ isEn ? (getUserRooms().length === 1 ? 'Room' : 'Rooms') : 'Ruangan' }}</span>
+            </div>
+            <div class="saved-rooms-list">
+              <div class="saved-room-item-card" *ngFor="let room of getUserRooms()">
+                <div class="item-left">
+                  <div class="room-badge-avatar">
+                    <ion-icon name="people"></ion-icon>
+                  </div>
+                  <div class="room-text-info">
+                    <div class="room-headline">
+                      <span class="room-title-name">{{ room.name }}</span>
+                      <span class="status-chip active-chip" *ngIf="activeRoom?.id === room.id">{{ isEn ? 'Active' : 'Aktif' }}</span>
+                      <span class="status-chip owner-chip" *ngIf="room.ownerEmail === authService.currentUser?.email">{{ isEn ? 'Owner' : 'Pemilik' }}</span>
+                    </div>
+                    <div class="room-sub-meta">
+                      {{ isEn ? 'Code' : 'Kode' }}: <code>{{ room.inviteCode }}</code> &bull; {{ room.members.length }} {{ isEn ? (room.members.length === 1 ? 'Member' : 'Members') : 'Anggota' }}
+                    </div>
+                  </div>
+                </div>
+                <div class="item-actions">
+                  <button type="button" class="btn-room-enter" (click)="selectAndEnterRoom(room)">
+                    {{ activeRoom?.id === room.id ? (isEn ? 'Open Records' : 'Buka Catatan') : (isEn ? 'Use Room' : 'Gunakan Ruangan') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 6: BUAT TRANSAKSI (Exact Match Image) -->
+      <!-- ========================================== -->
+      <section class="screen-view view-create-tx" *ngIf="activeView === 'create_transaction'">
+        <!-- Red/Coral Header Bar (Matches Image 2) -->
+        <div class="top-nav-bar header-coral">
+          <div class="header-row-1">
+            <div class="back-link" (click)="closeTransactionForm()">
+              <ion-icon name="arrow-back-outline"></ion-icon>
+              <span class="tx-page-title">{{ editingTxId ? (isEn ? 'Transaction Details' : 'Rincian Transaksi') : (isEn
+                ? 'Add Transaction' : 'Buat Transaksi') }}</span>
+            </div>
+            <div class="header-actions">
+              <button class="action-icon duplicate-action-btn" (click)="openDuplicateTransactionModal()"
+                [title]="isEn ? 'Duplicate Transaction' : 'Duplikat Transaksi'"
+                [attr.aria-label]="isEn ? 'Transaction copy options' : 'Pilihan salin transaksi'"
+                [attr.aria-expanded]="isTransactionCopyMenuOpen">
+                <ion-icon name="copy-outline"></ion-icon>
+              </button>
+              <div class="tx-copy-menu" *ngIf="isTransactionCopyMenuOpen">
+                <button type="button" (click)="copyCurrentTransaction()">
+                  <ion-icon name="copy-outline"></ion-icon>
+                  <span>{{ isEn ? 'Copy' : 'Salin' }}</span>
+                </button>
+                <button type="button" (click)="startDuplicateTransaction()">
+                  <ion-icon name="duplicate-outline"></ion-icon>
+                  <span>{{ isEn ? 'Duplicate' : 'Duplikat' }}</span>
+                </button>
+              </div>
+              <button class="action-icon" *ngIf="editingTxId" (click)="deleteCurrentTransaction()"
+                [title]="isEn ? 'Delete Transaction' : 'Hapus Transaksi'">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="create-tx-scroll">
+          <!-- Floating Toast Notification -->
+          <div class="tx-duplicate-toast" *ngIf="formToastMessage">
+            <ion-icon name="checkmark-circle"></ion-icon>
+            <span>{{ formToastMessage }}</span>
+            <button type="button" class="close-toast" (click)="formToastMessage = ''">&times;</button>
+          </div>
+
+          <!-- White Card Container (Matching Image 2) -->
+          <div class="create-tx-card">
+            <!-- Segment Toggle: Pengeluaran / Pemasukan -->
+            <div class="tx-segment-row">
+              <button class="tx-seg-btn exp" [class.active]="formType === 'expense'" (click)="setFormType('expense')">
+                {{ isEn ? 'Expense' : 'Pengeluaran' }}
+              </button>
+              <button class="tx-seg-btn inc" [class.active]="formType === 'income'" (click)="setFormType('income')">
+                {{ isEn ? 'Income' : 'Pemasukan' }}
+              </button>
+            </div>
+
+            <!-- Row 1: Tanggal -->
+            <div class="tx-form-row">
+              <label class="tx-row-label">{{ isEn ? 'Date' : 'Tanggal' }}</label>
+              <div class="tx-input-container date-container" (click)="openTxDatePicker(txDateInput)">
+                <span class="formatted-date-text">{{ formattedFormDate }}</span>
+                <input #txDateInput type="date" [(ngModel)]="formDate" (change)="onFormDateChange()"
+                  class="native-date-input" />
+                <button type="button" class="tx-date-picker-btn"
+                  (click)="openTxDatePicker(txDateInput); $event.stopPropagation()"
+                  [title]="isEn ? 'Select Date' : 'Pilih Tanggal'">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- Row 2: Kategori -->
+            <div class="tx-form-row">
+              <label class="tx-row-label">{{ isEn ? 'Category' : 'Kategori' }}</label>
+              <div class="tx-input-container with-action" [class.unselected]="!formCategoryId">
+                <select [(ngModel)]="formCategoryId" class="tx-select-field"
+                  [attr.aria-invalid]="formValidationField === 'category'"
+                  [attr.aria-describedby]="formValidationField === 'category' ? 'form-validation-toast' : null"
+                  (ngModelChange)="clearFormValidationMessage('category')">
+                  <option value="" disabled selected>{{ isEn ? 'Select Category' : 'Pilih Kategori' }}</option>
+                  <option *ngFor="let cat of getFormCategories()" [value]="cat.id">
+                    {{ getCategoryDisplayName(cat) }}
+                  </option>
+                </select>
+                <button class="tx-row-action-btn" (click)="openCategoryModal()"
+                  [title]="isEn ? 'Edit Categories' : 'Ubah & Tambah Kategori'">
+                  <ion-icon name="pencil-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+            <!-- Row 3: Jumlah -->
+            <div class="tx-form-row">
+              <label class="tx-row-label">{{ isEn ? 'Amount' : 'Jumlah' }}</label>
+              <div class="tx-input-container with-action">
+                <input type="text" inputmode="numeric" [value]="formatThousandsInput(formAmount)"
+                  (input)="onFormattedAmountInput($event, 'transaction')" placeholder="" class="tx-number-field"
+                  [attr.aria-invalid]="formValidationField === 'amount'"
+                  [attr.aria-describedby]="formValidationField === 'amount' ? 'form-validation-toast' : null"
+                  autocomplete="off" />
+                <button class="tx-row-action-btn calc-btn" (click)="toggleMiniCalc()"
+                  [title]="isEn ? 'Mini Calculator' : 'Kalkulator Mini'">
+                  <ion-icon name="calculator-outline"></ion-icon>
+                </button>
+              </div>
+            </div>
+            <!-- Row 4: Keterangan -->
+            <div class="tx-form-row">
+              <label class="tx-row-label">{{ isEn ? 'Notes' : 'Keterangan' }}</label>
+              <div class="tx-input-container">
+                <input type="text" [(ngModel)]="formNote" placeholder="" class="tx-text-field" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Mini Calculator Panel (when toggled) -->
+          <div class="mini-calculator-panel mt-3" *ngIf="isMiniCalcOpen">
+            <div class="calc-screen">
+              <div class="calc-formula">{{ calcFormula }}</div>
+              <div class="calc-val">{{ calcDisplay }}</div>
+            </div>
+            <div class="calc-grid">
+              <button class="c-btn fn" (click)="clearCalc()">C</button>
+              <button class="c-btn fn" (click)="calcBackspace()">⌫</button>
+              <button class="c-btn op" (click)="inputCalcOperator('÷')">÷</button>
+              <button class="c-btn op" (click)="inputCalcOperator('×')">×</button>
+
+              <button class="c-btn num" (click)="inputCalcDigit('7')">7</button>
+              <button class="c-btn num" (click)="inputCalcDigit('8')">8</button>
+              <button class="c-btn num" (click)="inputCalcDigit('9')">9</button>
+              <button class="c-btn op" (click)="inputCalcOperator('-')">-</button>
+
+              <button class="c-btn num" (click)="inputCalcDigit('4')">4</button>
+              <button class="c-btn num" (click)="inputCalcDigit('5')">5</button>
+              <button class="c-btn num" (click)="inputCalcDigit('6')">6</button>
+              <button class="c-btn op" (click)="inputCalcOperator('+')">+</button>
+
+              <button class="c-btn num" (click)="inputCalcDigit('1')">1</button>
+              <button class="c-btn num" (click)="inputCalcDigit('2')">2</button>
+              <button class="c-btn num" (click)="inputCalcDigit('3')">3</button>
+              <button class="c-btn eq" (click)="calculateCalcResult()">=</button>
+
+              <button class="c-btn num span-2" (click)="inputCalcDigit('0')">0</button>
+              <button class="c-btn num" (click)="inputCalcDigit('000')">000</button>
+              <button class="c-btn apply-btn" (click)="applyCalcToForm()">OK</button>
+            </div>
+          </div>
+
+          <!-- Red/Green SIMPAN Button (Centered) -->
+          <div class="tx-submit-wrap">
+            <button class="btn-save-tx" [class.btn-income]="formType === 'income'" (click)="saveTransaction()">
+              {{ isEn ? 'SAVE' : 'SIMPAN' }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div class="custom-modal-backdrop" *ngIf="isSavingGoalModalOpen" (click)="closeSavingGoalModal()">
+    <section class="savings-form-dialog" role="dialog" aria-modal="true"
+      [attr.aria-label]="isEn ? 'Add a savings goal' : 'Tambah celengan'"
+      (click)="$event.stopPropagation()">
+      <div class="savings-form-header">
+        <h2>{{ isEn ? 'Add Savings Goal' : 'Tambah Celengan' }}</h2>
+        <button type="button" (click)="closeSavingGoalModal()"
+          [attr.aria-label]="isEn ? 'Close' : 'Tutup'">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <label>
+        {{ isEn ? 'Savings name' : 'Nama celengan' }}
+        <input type="text" [(ngModel)]="savingGoalName"
+          [placeholder]="isEn ? 'For example, vacation' : 'Contoh: Liburan'">
+      </label>
+      <label>
+        {{ isEn ? 'Target amount' : 'Target tabungan' }}
+        <input type="text" inputmode="numeric" min="1" [value]="formatThousandsInput(savingGoalTargetAmount)"
+          (input)="onFormattedAmountInput($event, 'savingsTarget')"
+          [placeholder]="isEn ? 'Enter target amount' : 'Masukkan jumlah target'" autocomplete="off">
+      </label>
+      <label>
+        {{ isEn ? 'Currency' : 'Mata Uang' }}
+        <select [(ngModel)]="savingGoalCurrency">
+          <option value="IDR">{{ isEn ? 'Indonesian Rupiah (Rp)' : 'Indonesia Rupiah (Rp)' }}</option>
+          <option value="USD">{{ isEn ? 'US Dollar ($)' : 'Dolar Amerika ($)' }}</option>
+          <option value="EUR">{{ isEn ? 'Euro (€)' : 'Euro (€)' }}</option>
+          <option value="SGD">{{ isEn ? 'Singapore Dollar (S$)' : 'Dolar Singapura (S$)' }}</option>
+          <option value="JPY">{{ isEn ? 'Japanese Yen (¥)' : 'Yen Jepang (¥)' }}</option>
+          <option value="MYR">{{ isEn ? 'Malaysian Ringgit (RM)' : 'Ringgit Malaysia (RM)' }}</option>
+        </select>
+      </label>
+      <div class="savings-plan-field">
+        <span>{{ isEn ? 'Saving plan' : 'Rencana Pengisian' }}</span>
+        <div class="savings-frequency-options" role="group"
+          [attr.aria-label]="isEn ? 'Saving frequency' : 'Frekuensi pengisian'">
+          <button type="button" [class.active]="savingGoalFrequency === 'daily'"
+            (click)="savingGoalFrequency = 'daily'">{{ isEn ? 'Daily' : 'Harian' }}</button>
+          <button type="button" [class.active]="savingGoalFrequency === 'weekly'"
+            (click)="savingGoalFrequency = 'weekly'">{{ isEn ? 'Weekly' : 'Mingguan' }}</button>
+          <button type="button" [class.active]="savingGoalFrequency === 'monthly'"
+            (click)="savingGoalFrequency = 'monthly'">{{ isEn ? 'Monthly' : 'Bulanan' }}</button>
+        </div>
+      </div>
+      <label>
+        {{ isEn ? 'Contribution amount' : 'Nominal Pengisian' }}
+        <input type="text" inputmode="numeric" min="1"
+          [value]="formatThousandsInput(savingGoalPlannedContribution)"
+          (input)="onFormattedAmountInput($event, 'savingsPlan')"
+          [placeholder]="isEn ? 'Enter contribution amount' : 'Nominal Pengisian'" autocomplete="off">
+      </label>
+      <p class="savings-estimate-preview" *ngIf="savingGoalEstimatedDate">
+        <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+        <span>
+          {{ isEn ? 'Estimated target completion' : 'Estimasi target tercapai' }}:
+          <strong>{{ formatSavingsEstimatedDate(savingGoalEstimatedDate) }}</strong>
+        </span>
+      </p>
+      <p class="savings-form-error" *ngIf="savingGoalError" role="alert">{{ savingGoalError }}</p>
+      <button type="button" class="savings-form-submit" (click)="createSavingGoal()">
+        {{ isEn ? 'Save Goal' : 'Simpan Celengan' }}
+      </button>
+    </section>
+  </div>
+
+  <div class="custom-modal-backdrop" *ngIf="selectedGoalForContribution" (click)="closeContributionModal()">
+    <section class="savings-form-dialog" role="dialog" aria-modal="true"
+      [attr.aria-label]="isEn ? 'Record savings' : 'Catat tabungan'"
+      (click)="$event.stopPropagation()">
+      <div class="savings-form-header">
+        <h2>{{ isEn ? 'Record Savings' : 'Catat Tabungan' }}</h2>
+        <button type="button" (click)="closeContributionModal()"
+          [attr.aria-label]="isEn ? 'Close' : 'Tutup'">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <p class="savings-contribution-goal">{{ selectedGoalForContribution.name }}</p>
+      <div class="savings-record-actions" role="group"
+        [attr.aria-label]="isEn ? 'Savings action' : 'Aksi tabungan'">
+        <button type="button" [class.active]="savingContributionAction === 'add'"
+          (click)="savingContributionAction = 'add'; savingContributionError = ''">
+          {{ isEn ? '+ Add' : '+ Tambah' }}
+        </button>
+        <button type="button" [class.active]="savingContributionAction === 'subtract'"
+          (click)="savingContributionAction = 'subtract'; savingContributionError = ''">
+          {{ isEn ? '− Reduce' : '− Kurangi' }}
+        </button>
+      </div>
+      <label>
+        {{ isEn ? 'Amount' : 'Jumlah' }}
+        <input type="text" inputmode="numeric" min="1"
+          [value]="formatThousandsInput(savingContributionAmount)"
+          (input)="onFormattedAmountInput($event, 'savingsDeposit')"
+          [placeholder]="isEn ? 'Enter deposit amount' : 'Masukkan jumlah setoran'" autocomplete="off">
+      </label>
+      <div class="savings-amount-presets" [attr.aria-label]="isEn ? 'Quick amounts' : 'Nominal cepat'">
+        <button type="button" *ngFor="let amount of savingContributionQuickAmounts"
+          (click)="setSavingContributionAmount(amount)">
+          {{ formatThousandsInput(amount) }}
+        </button>
+      </div>
+      <p class="savings-form-error" *ngIf="savingContributionError" role="alert">
+        {{ savingContributionError }}
+      </p>
+      <button type="button" class="savings-form-submit" (click)="recordSaving()">
+        {{ savingContributionAction === 'add'
+          ? (isEn ? 'Record Savings' : 'Catat Tabungan')
+          : (isEn ? 'Record Reduction' : 'Catat Pengurangan') }}
+      </button>
+    </section>
+  </div>
+
+  <div class="custom-modal-backdrop savings-celebration-backdrop"
+    *ngIf="achievedSavingsGoal" (click)="achievedSavingsGoal = null">
+    <section class="savings-celebration-dialog" role="dialog" aria-modal="true"
+      [attr.aria-label]="isEn ? 'Savings target achieved' : 'Target tabungan tercapai'"
+      (click)="$event.stopPropagation()">
+      <button type="button" class="savings-celebration-close" (click)="achievedSavingsGoal = null"
+        [attr.aria-label]="isEn ? 'Close' : 'Tutup'">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+      <div class="savings-celebration-icon" aria-hidden="true">
+        <ion-icon name="trophy-outline"></ion-icon>
+        <span><ion-icon name="checkmark-outline"></ion-icon></span>
+      </div>
+      <p class="savings-celebration-eyebrow">{{ isEn ? 'A goal worth celebrating' : 'Pencapaian yang membanggakan' }}</p>
+      <h2>{{ isEn ? 'Congratulations!' : 'Selamat!' }}</h2>
+      <p class="savings-celebration-message">
+        {{ isEn ? 'Your savings have reached the target!' : 'Tabunganmu sudah mencapai target!' }}
+      </p>
+      <div class="savings-celebration-goal" *ngIf="achievedSavingsGoal as goal">
+        <span>{{ goal.name }}</span>
+        <strong>{{ formatSavingsMoney(goal.savedAmount, goal.currency) }}</strong>
+        <small>{{ isEn ? 'Target' : 'Target' }}: {{ formatSavingsMoney(goal.targetAmount, goal.currency) }}</small>
+      </div>
+      <button type="button" class="savings-celebration-action" (click)="achievedSavingsGoal = null">
+        {{ isEn ? 'Wonderful!' : 'Lihat Pencapaian' }}
+      </button>
+    </section>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CATAT / EDIT TRANSAKSI              -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isFormOpen">
+    <div class="custom-modal-card transaction-modal-card">
+      <div class="modal-header">
+        <h3>{{ editingTxId ? i18n.t('tx.editTitle') : i18n.t('tx.addTitle') }}</h3>
+        <button class="close-x" (click)="isFormOpen = false">&times;</button>
+      </div>
+
+      <div class="modal-body form-body">
+        <div class="type-switch-bar mb-3">
+          <button class="switch-btn exp" [class.active]="formType === 'expense'" (click)="setFormType('expense')">
+            {{ i18n.t('report.expense') }}
+          </button>
+          <button class="switch-btn inc" [class.active]="formType === 'income'" (click)="setFormType('income')">
+            {{ i18n.t('report.income') }}
+          </button>
+        </div>
+
+        <div class="amount-input-box mb-3">
+          <label>{{ i18n.t('tx.amount') }}</label>
+          <div class="amount-field-row">
+            <span class="currency-tag">{{ settings.currency === 'IDR' ? 'Rp' : settings.currency }}</span>
+            <input type="text" inputmode="numeric" [value]="formatThousandsInput(formAmount)"
+              (input)="onFormattedAmountInput($event, 'transaction')" class="amount-display-input" placeholder="0"
+              [attr.aria-invalid]="formValidationField === 'amount'"
+              [attr.aria-describedby]="formValidationField === 'amount' ? 'form-validation-toast' : null"
+              autocomplete="off" />
+            <button class="btn-calc-toggle" (click)="toggleMiniCalc()" title="Kalkulator Mini">
+              <ion-icon name="calculator-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini Calculator (Feature 15) -->
+        <div class="mini-calculator-panel" *ngIf="isMiniCalcOpen">
+          <div class="calc-screen">
+            <div class="calc-formula">{{ calcFormula }}</div>
+            <div class="calc-val">{{ calcDisplay }}</div>
+          </div>
+          <div class="calc-grid">
+            <button class="c-btn fn" (click)="clearCalc()">C</button>
+            <button class="c-btn fn" (click)="calcBackspace()">⌫</button>
+            <button class="c-btn op" (click)="inputCalcOperator('÷')">÷</button>
+            <button class="c-btn op" (click)="inputCalcOperator('×')">×</button>
+
+            <button class="c-btn num" (click)="inputCalcDigit('7')">7</button>
+            <button class="c-btn num" (click)="inputCalcDigit('8')">8</button>
+            <button class="c-btn num" (click)="inputCalcDigit('9')">9</button>
+            <button class="c-btn op" (click)="inputCalcOperator('-')">-</button>
+
+            <button class="c-btn num" (click)="inputCalcDigit('4')">4</button>
+            <button class="c-btn num" (click)="inputCalcDigit('5')">5</button>
+            <button class="c-btn num" (click)="inputCalcDigit('6')">6</button>
+            <button class="c-btn op" (click)="inputCalcOperator('+')">+</button>
+
+            <button class="c-btn num" (click)="inputCalcDigit('1')">1</button>
+            <button class="c-btn num" (click)="inputCalcDigit('2')">2</button>
+            <button class="c-btn num" (click)="inputCalcDigit('3')">3</button>
+            <button class="c-btn eq" (click)="calculateCalcResult()">=</button>
+
+            <button class="c-btn num span-2" (click)="inputCalcDigit('0')">0</button>
+            <button class="c-btn num" (click)="inputCalcDigit('000')">000</button>
+            <button class="c-btn apply-btn" (click)="applyCalcToForm()">OK</button>
+          </div>
+        </div>
+
+        <div class="form-group mb-3">
+          <label>{{ i18n.t('tx.category') }}</label>
+          <select [(ngModel)]="formCategoryId" class="form-input"
+            [attr.aria-invalid]="formValidationField === 'category'"
+            [attr.aria-describedby]="formValidationField === 'category' ? 'form-validation-toast' : null"
+            (ngModelChange)="clearFormValidationMessage('category')">
+            <option *ngFor="let cat of getFormCategories()" [value]="cat.id">
+              {{ getCategoryDisplayName(cat) }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group mb-3">
+          <label>{{ i18n.t('tx.date') }}</label>
+          <input type="date" [(ngModel)]="formDate" class="form-input" />
+        </div>
+
+        <div class="form-group mb-3">
+          <label>{{ i18n.t('tx.note') }}</label>
+          <input type="text" [(ngModel)]="formNote" [placeholder]="i18n.t('tx.notePlaceholder')" class="form-input" />
+        </div>
+
+        <div class="form-group mb-3">
+          <label>{{ i18n.t('tx.account') }}</label>
+          <select [(ngModel)]="formAccount" class="form-input">
+            <option value="Tunai">Tunai / Cash</option>
+            <option value="Rekening">Rekening Bank</option>
+            <option value="E-Wallet">E-Wallet (GoPay, OVO, Dana)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-danger" *ngIf="editingTxId" (click)="deleteTransaction(editingTxId)">
+          {{ i18n.t('tx.delete') }}
+        </button>
+        <button class="btn btn-secondary" (click)="isFormOpen = false">{{ i18n.t('tx.cancel') }}</button>
+        <button class="btn btn-primary" (click)="saveTransaction()">{{ i18n.t('tx.save') }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: KELOLA KATEGORI                     -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isCategoryModalOpen">
+    <div class="custom-modal-card">
+      <div class="modal-header">
+        <h3>{{ i18n.t('settings.categoryManage') }}</h3>
+        <button class="close-x" (click)="isCategoryModalOpen = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="add-cat-box mb-3">
+          <h5>Tambah Kategori Baru</h5>
+          <div class="form-group mb-2">
+            <input type="text" [(ngModel)]="newCatName" placeholder="Nama Kategori..." class="form-input">
+          </div>
+          <div class="d-flex gap-2 mb-2">
+            <select [(ngModel)]="newCatType" class="form-input">
+              <option value="expense">Pengeluaran</option>
+              <option value="income">Pemasukan</option>
+            </select>
+            <input type="color" [(ngModel)]="newCatColor" class="color-picker-input">
+          </div>
+          <button class="btn btn-primary w-100" (click)="createCategory()">+ Tambah Kategori</button>
+        </div>
+
+        <h5>Daftar Kategori</h5>
+        <div class="cat-list-box">
+          <div class="cat-manage-item" *ngFor="let c of categories">
+            <div class="d-flex align-center gap-2">
+              <span class="cat-dot" [style.background-color]="c.color"></span>
+              <span>{{ c.name }} <small>({{ c.type === 'income' ? 'Masuk' : 'Keluar' }})</small></span>
+            </div>
+            <button class="btn-icon-del" (click)="deleteCategory(c.id)">&times;</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="isCategoryModalOpen = false">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: EXPORT LAPORAN                      -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isExportModalOpen" (click)="closeExportModal()">
+    <div class="export-dialog-box" (click)="closeExportSelectMenus(); $event.stopPropagation()">
+      <!-- Dark Charcoal Header -->
+      <div class="export-dialog-header">
+        <h3>{{ isEn ? 'EXPORT' : 'EKSPOR' }}</h3>
+      </div>
+
+      <!-- Light Gray Body -->
+      <div class="export-dialog-body">
+        <!-- Judul -->
+        <div class="export-field-group">
+          <label class="export-label">{{ isEn ? 'Title' : 'Judul' }}</label>
+          <input type="text" [(ngModel)]="exportTitle" class="export-input-clean"
+            [placeholder]="isEn ? 'Financial Report' : 'Laporan Keuangan'">
+        </div>
+
+        <!-- Dari Tanggal & Sampai Tanggal -->
+        <div class="export-dates-row">
+          <div class="export-date-col">
+            <label class="export-label">{{ isEn ? 'From Date' : 'Dari Tanggal' }}</label>
+            <div class="date-picker-trigger" (click)="openExportDatePicker(startDatePicker)">
+              <span class="date-val-text">{{ formatExportDate(exportStartDate) }}</span>
+              <input #startDatePicker type="date" [(ngModel)]="exportStartDate" class="hidden-date-picker"
+                [attr.aria-label]="isEn ? 'Choose start date' : 'Pilih tanggal mulai'">
+            </div>
+          </div>
+          <div class="export-date-col">
+            <label class="export-label">{{ isEn ? 'To Date' : 'Sampai Tanggal' }}</label>
+            <div class="date-picker-trigger" (click)="openExportDatePicker(endDatePicker)">
+              <span class="date-val-text">{{ formatExportDate(exportEndDate) }}</span>
+              <input #endDatePicker type="date" [(ngModel)]="exportEndDate" class="hidden-date-picker"
+                [attr.aria-label]="isEn ? 'Choose end date' : 'Pilih tanggal akhir'">
+            </div>
+          </div>
+        </div>
+
+        <!-- Kategori -->
+        <div class="export-field-group">
+          <label class="export-label">{{ isEn ? 'Category' : 'Kategori' }}</label>
+          <div class="export-select-wrap">
+            <button type="button" class="export-select-trigger"
+              (click)="toggleExportCategoryMenu(); $event.stopPropagation()"
+              [attr.aria-expanded]="isExportCategoryMenuOpen" aria-haspopup="menu">
+              <span>{{ getExportCategoryLabel() }}</span>
+              <ion-icon name="chevron-down-outline"></ion-icon>
+            </button>
+            <div class="export-select-menu" *ngIf="isExportCategoryMenuOpen" role="menu"
+              [attr.aria-label]="isEn ? 'Export category' : 'Kategori ekspor'"
+              (click)="$event.stopPropagation()">
+              <button type="button" role="menuitemradio" [attr.aria-checked]="exportCategoryId === 'all'"
+                [class.selected]="exportCategoryId === 'all'" (click)="selectExportCategory('all')">
+                <span>{{ isEn ? 'All Categories' : 'Semua Kategori' }}</span>
+                <ion-icon *ngIf="exportCategoryId === 'all'" name="checkmark-outline"></ion-icon>
+              </button>
+              <button type="button" role="menuitemradio" *ngFor="let cat of categories"
+                [attr.aria-checked]="exportCategoryId === cat.id" [class.selected]="exportCategoryId === cat.id"
+                (click)="selectExportCategory(cat.id)">
+                <span>{{ getCategoryDisplayName(cat) }}</span>
+                <ion-icon *ngIf="exportCategoryId === cat.id" name="checkmark-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Format -->
+        <div class="export-field-group">
+          <label class="export-label">{{ isEn ? 'Format' : 'Format' }}</label>
+          <div class="export-select-wrap">
+            <button type="button" class="export-select-trigger"
+              (click)="toggleExportFormatMenu(); $event.stopPropagation()"
+              [attr.aria-expanded]="isExportFormatMenuOpen" aria-haspopup="menu">
+              <span>{{ exportFormat }}</span>
+              <ion-icon name="chevron-down-outline"></ion-icon>
+            </button>
+            <div class="export-select-menu format-menu" *ngIf="isExportFormatMenuOpen" role="menu"
+              [attr.aria-label]="isEn ? 'Export format' : 'Format ekspor'"
+              (click)="$event.stopPropagation()">
+              <button type="button" role="menuitemradio" *ngFor="let format of exportFormatOptions"
+                [attr.aria-checked]="exportFormat === format" [class.selected]="exportFormat === format"
+                (click)="selectExportFormat(format)">
+                <span>{{ format }}</span>
+                <ion-icon *ngIf="exportFormat === format" name="checkmark-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer: Batal (Red) & Ekspor (Green) -->
+      <div class="export-dialog-footer">
+        <button class="export-footer-btn btn-batal" (click)="closeExportModal()">{{ isEn ? 'CANCEL' : 'BATAL' }}</button>
+        <button class="export-footer-btn btn-ekspor" (click)="executeExport()">{{ isEn ? 'EXPORT' : 'EKSPOR' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="custom-modal-backdrop export-success-backdrop" [hidden]="!isExportSuccessModalOpen"
+    (click)="closeExportSuccessModal()">
+    <section class="export-success-dialog" role="dialog" aria-modal="true"
+      [attr.aria-label]="isEn ? 'Export complete' : 'Ekspor berhasil'"
+      (click)="$event.stopPropagation()">
+      <h3>{{ isEn ? 'Success' : 'Berhasil' }}</h3>
+      <p>
+        {{ isEn ? 'Export saved to' : 'Ekspor file tersimpan di' }}
+        <strong>{{ exportedFile?.location }}</strong>
+      </p>
+      <div class="export-success-actions">
+        <button type="button" (click)="openExportedFile()" [disabled]="isExportActionRunning">
+          {{ isEn ? 'OPEN' : 'BUKA' }}
+        </button>
+        <button type="button" (click)="shareExportedFile()" [disabled]="isExportActionRunning">
+          {{ isEn ? 'SEND' : 'KIRIM' }}
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: SARING (Matching User Screenshot)   -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isFilterModalOpen" (click)="closeFilterModal()">
+    <div class="filter-dialog-box" (click)="$event.stopPropagation()">
+      <!-- Dark Charcoal Header: SARING -->
+      <div class="filter-dialog-header">
+        <h3>{{ isEn ? 'FILTER' : 'SARING' }}</h3>
+      </div>
+
+      <!-- Body -->
+      <div class="filter-dialog-body">
+        <p class="filter-instruction-text">{{ isEn ? 'Select the items you want to filter' : 'Pilih item yang ingin anda filter' }}</p>
+
+        <!-- Segment Tabs: PEMASUKAN | PENGELUARAN -->
+        <div class="filter-segment-bar">
+          <button class="filter-seg-btn" [class.active]="filterModalTab === 'income'"
+            (click)="filterModalTab = 'income'">
+            {{ isEn ? 'INCOME' : 'PEMASUKAN' }}
+          </button>
+          <button class="filter-seg-btn" [class.active]="filterModalTab === 'expense'"
+            (click)="filterModalTab = 'expense'">
+            {{ isEn ? 'EXPENSE' : 'PENGELUARAN' }}
+          </button>
+        </div>
+
+        <!-- Scrollable Category Checkbox List -->
+        <div class="filter-items-scroll">
+          <!-- Row 1: Semua Pengeluaran / Semua Pemasukan -->
+          <div class="filter-checkbox-row master-row" (click)="toggleAllCurrentTab()">
+            <div class="red-square-checkbox" [class.checked]="isAllCurrentTabSelected()">
+              <ion-icon name="checkmark-sharp" *ngIf="isAllCurrentTabSelected()"></ion-icon>
+            </div>
+            <span class="filter-item-name">
+              {{ filterModalTab === 'expense'
+                ? (isEn ? 'All Expenses' : 'Semua Pengeluaran')
+                : (isEn ? 'All Income' : 'Semua Pemasukan') }}
+            </span>
+          </div>
+
+          <!-- Individual Category Rows -->
+          <div class="filter-checkbox-row" *ngFor="let cat of getCurrentTabCategories()"
+            (click)="toggleFilterCategory(cat.id)">
+            <div class="red-square-checkbox" [class.checked]="isCategoryFilterChecked(cat.id)">
+              <ion-icon name="checkmark-sharp" *ngIf="isCategoryFilterChecked(cat.id)"></ion-icon>
+            </div>
+            <span class="filter-item-name">{{ getCategoryDisplayName(cat) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer: Batal (Red) & Saring (Green) -->
+      <div class="filter-dialog-footer">
+        <button class="filter-footer-btn btn-batal" (click)="closeFilterModal()">{{ isEn ? 'CANCEL' : 'BATAL' }}</button>
+        <button class="filter-footer-btn btn-saring" (click)="applyCategoryFilter()">{{ isEn ? 'FILTER' : 'SARING' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: HOME SCREEN WIDGET                  -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isWidgetModalOpen">
+    <div class="custom-modal-card">
+      <div class="modal-header">
+        <h3>{{ i18n.t('widget.title') }}</h3>
+        <button class="close-x" (click)="isWidgetModalOpen = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="item-sub mb-3">Simulasi Widget Home Screen untuk memonitor keuangan tanpa membuka aplikasi penuh:</p>
+
+        <div class="mobile-widget-preview">
+          <div class="widget-header">
+            <span class="widget-app-name">Cuan Widget</span>
+            <span class="widget-badge">LIVE</span>
+          </div>
+          <div class="widget-balance">
+            <span class="lbl">Saldo Saat Ini</span>
+            <span class="amt">{{ financeService.formatMoney(yearlySummary.balance) }}</span>
+          </div>
+          <div class="widget-stats-row">
+            <div>
+              <span class="s-lbl">Masuk:</span>
+              <span class="s-val inc">+{{ financeService.formatMoney(yearlySummary.income) }}</span>
+            </div>
+            <div>
+              <span class="s-lbl">Keluar:</span>
+              <span class="s-val exp">-{{ financeService.formatMoney(yearlySummary.expense) }}</span>
+            </div>
+          </div>
+          <div class="widget-actions">
+            <button class="btn-widget add-inc" (click)="openAddTransaction('income'); isWidgetModalOpen = false">+
+              Masuk</button>
+            <button class="btn-widget add-exp" (click)="openAddTransaction('expense'); isWidgetModalOpen = false">-
+              Keluar</button>
+          </div>
+        </div>
+
+        <div class="widget-guide mt-3">
+          <h6>Cara Pasang di Layar Utama HP:</h6>
+          <ol>
+            <li>Buka menu Browser (Chrome / Safari) tombol titik tiga atau Share.</li>
+            <li>Pilih <strong>"Add to Home Screen"</strong> (Tambahkan ke Layar Utama).</li>
+            <li>Aplikasi Cuan langsung bisa diakses cepat dan mendukung widget offline.</li>
+          </ol>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="isWidgetModalOpen = false">Mengerti</button>
+      </div>
+    </div>
+  </div>
+  <!-- ========================================== -->
+  <!-- MODAL: BERI PENILAIAN                      -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isRatingModalOpen" (click)="isRatingModalOpen = false">
+    <div class="custom-modal-card rating-modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Beri Penilaian</h3>
+        <button class="close-x" (click)="isRatingModalOpen = false">&times;</button>
+      </div>
+      <div class="modal-body text-center">
+        <p class="mb-2">Bagaimana pengalaman Anda menggunakan aplikasi ini?</p>
+        <div class="rating-stars-row">
+          <button *ngFor="let s of [1, 2, 3, 4, 5]" class="star-btn" (click)="ratingStars = s">
+            <ion-icon [name]="s <= ratingStars ? 'star' : 'star-outline'" [class.active]="s <= ratingStars"></ion-icon>
+          </button>
+        </div>
+        <textarea [(ngModel)]="ratingFeedback" class="form-input mt-3" rows="3"
+          placeholder="Tulis ulasan Anda (opsional)..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="isRatingModalOpen = false">Batal</button>
+        <button class="btn btn-primary" (click)="submitRating()">Kirim Penilaian</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: BANTUAN                             -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isHelpModalOpen" (click)="isHelpModalOpen = false">
+    <div class="custom-modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ isEn ? 'Help & Guide' : 'Bantuan & Panduan' }}</h3>
+        <button class="close-x" (click)="isHelpModalOpen = false">&times;</button>
+      </div>
+      <div class="modal-body help-modal-body">
+        <div class="faq-item">
+          <h4><ion-icon name="add-circle-outline"></ion-icon>
+            {{ isEn ? 'Adding a Transaction' : 'Menambah Transaksi' }}</h4>
+          <p>{{ isEn ? 'Tap the red ' : 'Klik tombol merah ' }}<strong>+</strong>
+            {{ isEn ? ' button in the bottom-right corner to record new income or expenses.' : ' di pojok kanan bawah untuk mencatat pemasukan atau pengeluaran baru.' }}
+          </p>
+        </div>
+        <div class="faq-item">
+          <h4><ion-icon name="calendar-outline"></ion-icon>
+            {{ isEn ? 'Selecting Month & Year' : 'Memilih Bulan & Tahun' }}</h4>
+          <p>{{ isEn ? 'Tap the month name in the top-left corner (e.g. ' : 'Klik nama bulan di pojok kiri atas (misal: ' }}
+            <em>{{ isEn ? 'Oct 2026' : 'Okt 2026' }}</em>
+            {{ isEn ? ') to open the month and year picker.' : ') untuk membuka panel pemilih bulan dan tahun.' }}
+          </p>
+        </div>
+        <div class="faq-item">
+          <h4><ion-icon name="download-outline"></ion-icon>
+            {{ isEn ? 'Exporting Reports' : 'Ekspor Laporan' }}</h4>
+          <p>{{ isEn ? 'Tap the download icon in the top-right corner, choose a period and format (PDF, CSV, or Excel .xls), then tap Export. On your phone, choose an app such as WhatsApp, Gmail, or Files from the share menu. On a computer, the file downloads directly.' : 'Ketuk ikon unduh di pojok kanan atas, pilih periode dan format (PDF, CSV, atau Excel .xls), lalu ketuk Ekspor. Di HP, pilih aplikasi seperti WhatsApp, Gmail, atau File dari menu berbagi. Di komputer, berkas akan langsung diunduh.' }}</p>
+        </div>
+        <div class="faq-item">
+          <h4><ion-icon name="receipt-outline"></ion-icon>
+            {{ isEn ? 'Managing Categories' : 'Mengelola Kategori' }}</h4>
+          <p>{{ isEn ? 'Open the menu and choose Categories, or tap the pencil next to Category in the transaction form. Use the tabs to switch between expenses and income. Tap + to add a category, or use the edit and delete icons beside a category.' : 'Buka menu lalu pilih Kategori, atau ketuk ikon pensil di samping kolom Kategori pada formulir transaksi. Gunakan tab untuk beralih antara Pengeluaran dan Pemasukan. Ketuk + untuk menambah kategori, atau gunakan ikon ubah dan hapus di samping kategori.' }}</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="isHelpModalOpen = false">{{ isEn ? 'Got it' : 'Mengerti' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: TENTANG                             -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isAboutModalOpen" (click)="isAboutModalOpen = false">
+    <div class="custom-modal-card text-center" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ isEn ? 'About the App' : 'Tentang Aplikasi' }}</h3>
+        <button class="close-x" (click)="isAboutModalOpen = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="about-app-badge">
+          <ion-icon name="wallet" class="about-icon"></ion-icon>
+          <h3>{{ isEn ? 'Finance Tracker' : 'Catatan Keuangan' }}</h3>
+          <span class="app-version">{{ isEn ? 'Version 1.0.0' : 'Versi 1.0.0' }}</span>
+        </div>
+        <p class="about-desc mt-3">
+          {{ isEn ? 'A daily finance tracking app designed for convenience, speed, and privacy of your financial records.' : 'Aplikasi pencatatan keuangan harian yang dirancang untuk kemudahan, kecepatan, dan privasi catatan finansial Anda.' }}
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" (click)="isAboutModalOpen = false">{{ isEn ? 'Close' : 'Tutup' }}</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================== -->
+  <!-- MODAL: TAMBAH KATEGORI (Screenshot 1 '+')  -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isAddCatModalOpen" (click)="isAddCatModalOpen = false">
+    <div class="category-action-dialog" (click)="$event.stopPropagation()">
+      <div class="cat-dialog-title">{{ isEn ? 'Add Category' : 'Tambah Kategori' }}</div>
+      <div class="cat-dialog-body">
+        <label class="cat-form-label">{{ isEn ? 'Category Name' : 'Nama Kategori' }}</label>
+        <input type="text" [(ngModel)]="newCatNameInput"
+          [placeholder]="isEn ? 'Category name...' : 'Nama kategori...'" class="cat-dialog-input"
+          autofocus />
+
+        <label class="cat-form-label mt-3">{{ isEn ? 'Category Type' : 'Tipe Kategori' }}</label>
+        <div class="cat-type-pill-toggle">
+          <button type="button" class="type-pill-btn" [class.active]="newCatTypeInput === 'expense'"
+            (click)="newCatTypeInput = 'expense'">
+            {{ isEn ? 'Expense' : 'Pengeluaran' }}
+          </button>
+          <button type="button" class="type-pill-btn" [class.active]="newCatTypeInput === 'income'"
+            (click)="newCatTypeInput = 'income'">
+            {{ isEn ? 'Income' : 'Pemasukan' }}
+          </button>
+        </div>
+      </div>
+      <div class="cat-dialog-footer">
+        <button class="cat-modal-btn btn-cancel" (click)="isAddCatModalOpen = false">{{ isEn ? 'Cancel' : 'Batal' }}</button>
+        <button class="cat-modal-btn btn-save" (click)="saveAddCategoryModal()"
+          [disabled]="!newCatNameInput.trim()">{{ isEn ? 'Save' : 'Simpan' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: UBAH KATEGORI (Screenshot 1 Pencil) -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isEditCatModalOpen" (click)="isEditCatModalOpen = false">
+    <div class="category-action-dialog" (click)="$event.stopPropagation()">
+      <div class="cat-dialog-title">{{ isEn ? 'Edit Category' : 'Ubah Kategori' }}</div>
+      <div class="cat-dialog-body">
+        <label class="cat-form-label">{{ isEn ? 'Category Name' : 'Nama Kategori' }}</label>
+        <input type="text" [(ngModel)]="editCatNameInput"
+          [placeholder]="isEn ? 'Category name...' : 'Nama kategori...'" class="cat-dialog-input"
+          autofocus />
+      </div>
+      <div class="cat-dialog-footer">
+        <button class="cat-modal-btn btn-cancel" (click)="isEditCatModalOpen = false">{{ isEn ? 'Cancel' : 'Batal' }}</button>
+        <button class="cat-modal-btn btn-save" (click)="saveEditCategoryModal()"
+          [disabled]="!editCatNameInput.trim()">{{ isEn ? 'Save' : 'Simpan' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DETAIL RIWAYAT KOMODITAS PANGAN     -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="selectedCommodityModal" (click)="closeCommodityDetail()">
+    <div class="km-detail-modal" (click)="$event.stopPropagation()">
+      <div class="km-modal-header">
+        <div class="km-modal-title-box">
+          <span class="km-modal-badge">{{ getCommodityGroupDisplayName(selectedCommodityModal.groupLabel) }}</span>
+          <h3>{{ getCommodityDisplayName(selectedCommodityModal) }}</h3>
+        </div>
+        <button type="button" class="km-modal-close" (click)="closeCommodityDetail()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="km-modal-body">
+        <!-- Main Price Highlight -->
+        <div class="km-modal-hero">
+          <div class="km-modal-price">{{ formatCommodityPrice(selectedCommodityModal.price) }}</div>
+          <div class="km-modal-unit">{{ isEn ? 'per' : 'per' }} {{ selectedCommodityModal.denomination }}</div>
+          <div class="km-change-pill hero" [class.up]="selectedCommodityModal.fluc > 0"
+            [class.down]="selectedCommodityModal.fluc < 0" [class.stable]="selectedCommodityModal.fluc === 0">
+            <ion-icon
+              [name]="selectedCommodityModal.fluc > 0 ? 'caret-up-outline' : (selectedCommodityModal.fluc < 0 ? 'caret-down-outline' : 'remove-outline')"></ion-icon>
+            <span *ngIf="selectedCommodityModal.fluc !== 0">
+              {{ selectedCommodityModal.fluc > 0 ? '+' : '' }}{{ selectedCommodityModal.fluc }}%
+              ({{ selectedCommodityModal.change > 0 ? '+' : '' }}{{ formatCommodityPrice(selectedCommodityModal.change)
+              }})
+            </span>
+            <span *ngIf="selectedCommodityModal.fluc === 0">{{ isEn ? 'Stable (Rp 0)' : 'Stabil (Rp 0)' }}</span>
+          </div>
+        </div>
+        <div class="market-copy-action">
+          <button type="button" (click)="selectCommodityForCopy(selectedCommodityModal); copySelectedMarketPrice()">
+            <ion-icon name="copy-outline"></ion-icon>
+            {{ isEn ? 'Copy price' : 'Salin Harga' }}
+          </button>
+          <span [class.error]="marketPriceCopyError" *ngIf="marketPriceCopyMessage">
+            {{ marketPriceCopyMessage }}
+          </span>
+        </div>
+
+        <!-- 7-Day History Table -->
+        <div class="km-history-title">{{ isEn ? 'Price History for the Last 7 Days (National)' : 'Riwayat Harga 7 Hari Terakhir (Nasional)' }}</div>
+        <div class="km-history-table-wrap">
+          <table class="km-history-table">
+            <thead>
+              <tr>
+                <th>{{ isEn ? 'Date' : 'Tanggal' }}</th>
+                <th class="text-right">{{ isEn ? 'Price' : 'Harga' }}</th>
+                <th class="text-right">{{ isEn ? 'Change' : 'Perubahan' }}</th>
+                <th class="text-right">{{ isEn ? 'Fluctuation' : 'Fluktuasi' }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let h of selectedCommodityModal.history">
+                <td>{{ h.date | date:'dd MMM yyyy' }}</td>
+                <td class="text-right font-bold">{{ formatCommodityPrice(h.nominal) }}</td>
+                <td class="text-right" [class.text-up]="h.harga > 0" [class.text-down]="h.harga < 0">
+                  {{ h.harga > 0 ? '+' : '' }}{{ h.harga !== 0 ? formatCommodityPrice(h.harga) : '-' }}
+                </td>
+                <td class="text-right" [class.text-up]="h.fluc > 0" [class.text-down]="h.fluc < 0">
+                  {{ h.fluc > 0 ? '+' : '' }}{{ h.fluc !== 0 ? h.fluc + '%' : '0%' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="km-modal-footer">
+        <a [href]="officialBiHargapanganUrl" target="_blank" rel="noopener noreferrer" class="km-web-btn">
+          <ion-icon name="open-outline"></ion-icon>
+          {{ isEn ? 'View on bi.go.id/hargapangan' : 'Lihat di bi.go.id/hargapangan' }}
+        </a>
+        <button type="button" class="btn btn-secondary" (click)="closeCommodityDetail()">{{ isEn ? 'Close' : 'Tutup' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PILIH TRANSAKSI UNTUK DIDUPLIKASI   -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isDuplicateModalOpen" (click)="closeDuplicateTransactionModal()">
+    <div class="duplicate-picker-dialog" (click)="$event.stopPropagation()">
+      <div class="duplicate-dialog-header">
+        <div class="header-text-wrap">
+          <span class="dialog-badge">{{ isEn ? 'DUPLICATE TRANSACTION' : 'DUPLIKAT TRANSAKSI' }}</span>
+          <h3>{{ isEn ? 'Choose a Transaction to Duplicate' : 'Pilih Catatan untuk Diduplikasi' }}</h3>
+          <p>{{ isEn ? 'The selected transaction will be loaded into the form so you can review and edit it before saving.' : 'Catatan yang dipilih akan dimuat ke formulir agar dapat Anda periksa dan edit sebelum disimpan.' }}</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeDuplicateTransactionModal()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Quick duplicate most recent transaction -->
+      <div class="quick-duplicate-banner" *ngIf="quickDuplicateTransaction as quickTx"
+        (click)="duplicateLastTransaction()">
+        <div class="quick-icon"><ion-icon name="flash"></ion-icon></div>
+        <div class="quick-text">
+          <span class="quick-title">{{ isEn ? 'Duplicate Last Transaction' : 'Duplikat Catatan Terakhir' }}</span>
+          <span class="quick-desc">
+          {{ getTxCategoryName(quickTx) }} &bull; Rp {{ quickTx.amount | number:'1.0-0' }} ({{
+            quickTx.date | date:'dd MMM' }})
+          </span>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="quick-arrow"></ion-icon>
+      </div>
+
+      <!-- Search input -->
+      <div class="duplicate-search-box" *ngIf="transactions.length > 2">
+        <ion-icon name="search-outline"></ion-icon>
+        <input type="text" [(ngModel)]="duplicateSearchQuery"
+          [placeholder]="isEn ? 'Search by category, note, amount...' : 'Cari berdasarkan kategori, catatan, nominal...'"
+          [attr.aria-label]="isEn ? 'Search transactions to duplicate' : 'Cari transaksi yang akan diduplikasi'" />
+        <button type="button" *ngIf="duplicateSearchQuery" (click)="duplicateSearchQuery = ''" class="clear-search-btn"
+          [attr.aria-label]="isEn ? 'Clear search' : 'Hapus pencarian'">
+          <ion-icon name="close-circle"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Transaction List -->
+      <div class="duplicate-list-scroll">
+        <div class="duplicate-item-row" *ngFor="let tx of filteredDuplicateTransactions"
+          (click)="applyDuplicatedTransaction(tx)">
+          <div class="tx-item-icon" [style.background-color]="tx.categoryColor || '#3b82f6'">
+            <ion-icon [name]="tx.categoryIcon || (tx.type === 'income' ? 'wallet-outline' : 'cart-outline')"></ion-icon>
+          </div>
+          <div class="tx-item-details">
+            <span class="tx-item-cat">{{ getTxCategoryName(tx) }}</span>
+            <span class="tx-item-sub">
+              {{ tx.date | date:'dd MMM yyyy' }}
+              <span *ngIf="tx.note">&bull; {{ tx.note }}</span>
+            </span>
+          </div>
+          <div class="tx-item-right">
+            <span class="tx-item-amount" [class.income]="tx.type === 'income'" [class.expense]="tx.type === 'expense'">
+              {{ tx.type === 'income' ? '+' : '-' }}Rp {{ tx.amount | number:'1.0-0' }}
+            </span>
+            <span class="tx-copy-pill">{{ isEn ? 'Copy' : 'Salin' }}</span>
+          </div>
+        </div>
+
+        <div class="empty-duplicate-list" *ngIf="filteredDuplicateTransactions.length === 0">
+          <ion-icon name="search-outline"></ion-icon>
+          <span>{{ isEn ? 'No matching transactions found.' : 'Tidak ada catatan transaksi yang sesuai.' }}</span>
+        </div>
+      </div>
+
+      <div class="duplicate-dialog-footer">
+        <button type="button" class="btn-cancel" (click)="closeDuplicateTransactionModal()">{{ isEn ? 'Cancel' : 'Batal' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DETAIL LOGAM INDUSTRI (INVESTING.COM) -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="selectedIndustrialMetalModal as metal"
+    (click)="closeIndustrialMetalDetail()">
+    <div class="in-detail-dialog" (click)="$event.stopPropagation()">
+      <div class="in-dialog-header">
+        <div class="in-dialog-title-box">
+          <span class="in-dialog-badge">INVESTING.COM • {{ metal.exchange }}</span>
+          <h3>{{ isEn ? metal.englishName : metal.name }}</h3>
+          <p>{{ metal.englishName }} &bull; {{ isEn ? 'Contract' : 'Kontrak' }} {{ metal.contractMonth }}</p>
+        </div>
+        <button type="button" class="in-dialog-close" (click)="closeIndustrialMetalDetail()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="in-modal-body">
+        <div class="in-modal-price-hero">
+          <div class="in-hero-usd">{{ formatUsd(metal.priceUsd) }}</div>
+          <div class="in-hero-unit">{{ metal.unit }}</div>
+          <div class="in-hero-idr">{{ isEn ? 'Estimate:' : 'Estimasi:' }} {{ formatIdrPrice(metal.priceIdr) }} / {{ metal.idrUnit.replace('Rp / ',
+            '') }}</div>
+          <div class="in-change-pill hero" [class.up]="metal.trend === 'up'" [class.down]="metal.trend === 'down'"
+            [class.stable]="metal.trend === 'stable'">
+            <ion-icon
+              [name]="metal.trend === 'up' ? 'arrow-up' : (metal.trend === 'down' ? 'arrow-down' : 'remove')"></ion-icon>
+            <span>{{ metal.changePercent > 0 ? '+' : '' }}{{ metal.changePercent | number:'1.2-2' }}% ({{
+              metal.changeUsd > 0 ? '+' : '' }}{{ metal.changeUsd | number:'1.2-4' }})</span>
+          </div>
+        </div>
+
+        <div class="in-detail-grid">
+          <div class="in-detail-cell">
+            <span class="in-cell-lbl">{{ isEn ? 'Open' : 'Pembukaan (Open)' }}</span>
+            <span class="in-cell-val">{{ formatUsd(metal.openUsd) }}</span>
+          </div>
+          <div class="in-detail-cell">
+            <span class="in-cell-lbl">{{ isEn ? 'Today’s High' : 'Tertinggi Hari Ini' }}</span>
+            <span class="in-cell-val text-up">{{ formatUsd(metal.highUsd) }}</span>
+          </div>
+          <div class="in-detail-cell">
+            <span class="in-cell-lbl">{{ isEn ? 'Today’s Low' : 'Terendah Hari Ini' }}</span>
+            <span class="in-cell-val text-down">{{ formatUsd(metal.lowUsd) }}</span>
+          </div>
+          <div class="in-detail-cell">
+            <span class="in-cell-lbl">{{ isEn ? 'Previous Close' : 'Penutupan Sebelumnya' }}</span>
+            <span class="in-cell-val">{{ formatUsd(metal.prevCloseUsd) }}</span>
+          </div>
+          <div class="in-detail-cell">
+            <span class="in-cell-lbl">{{ isEn ? 'Reference Exchange' : 'Bursa Acuan' }}</span>
+            <span class="in-cell-val">{{ metal.exchange }}</span>
+          </div>
+          <div class="in-detail-cell">
+            <span class="in-cell-lbl">{{ isEn ? 'Conversion Rate' : 'Kurs Konversi' }}</span>
+            <span class="in-cell-val">Rp {{ industrialMetalsUsdRate | number:'1.0-0' }} / USD</span>
+          </div>
+        </div>
+
+        <div class="in-modal-actions">
+          <button type="button" class="market-copy-button"
+            (click)="selectIndustrialMetalForCopy(metal); copySelectedMarketPrice()">
+            <ion-icon name="copy-outline"></ion-icon>
+            {{ isEn ? 'Copy price' : 'Salin Harga' }}
+          </button>
+          <span class="market-copy-message" [class.error]="marketPriceCopyError" *ngIf="marketPriceCopyMessage">
+            {{ marketPriceCopyMessage }}
+          </span>
+          <a [href]="metal.investingUrl" target="_blank" rel="noopener noreferrer" class="in-open-investing-btn">
+            <span>{{ isEn ? 'Open on Investing.com' : 'Buka di Investing.com' }}</span>
+            <ion-icon name="open-outline"></ion-icon>
+          </a>
+        </div>
+      </div>
+
+      <div class="in-dialog-footer">
+        <button type="button" class="btn-cancel" (click)="closeIndustrialMetalDetail()">{{ isEn ? 'Close' : 'Tutup' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: SETTING PICKER (Tema, Mata Uang, dll) -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isSettingPickerOpen" (click)="isSettingPickerOpen = false">
+    <div class="setting-picker-dialog" (click)="$event.stopPropagation()">
+      <div class="setting-dialog-header">
+        <div class="header-text-wrap">
+          <span class="dialog-badge">{{ isEn ? 'SETTINGS' : 'PENGATURAN' }}</span>
+          <h3>{{ settingPickerTitle }}</h3>
+        </div>
+        <button type="button" class="close-btn" (click)="isSettingPickerOpen = false">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="setting-options-list">
+        <div class="setting-opt-card" *ngFor="let opt of settingPickerOptions" [class.active]="isSettingSelected(opt)"
+          (click)="pickPendingOption(opt)">
+          <div class="opt-left">
+            <span class="opt-label">{{ opt.label }}</span>
+          </div>
+          <ion-icon *ngIf="isSettingSelected(opt)" name="checkmark-circle" class="opt-check-icon"></ion-icon>
+        </div>
+      </div>
+
+      <div class="setting-dialog-footer">
+        <button type="button" class="btn-cancel" (click)="isSettingPickerOpen = false">
+          {{ isEn ? 'Cancel' : 'Batal' }}
+        </button>
+        <button type="button" class="btn-save" (click)="saveSettingOption()">
+          {{ isEn ? 'Save' : 'Simpan' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CUSTOM CONFIRMATION (Hapus Transaksi dll) -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isConfirmModalOpen" (click)="handleConfirmModalCancel()">
+    <div class="confirm-dialog-card" (click)="$event.stopPropagation()">
+      <div class="confirm-icon-wrap" [class.danger]="confirmModalType === 'danger'">
+        <ion-icon name="trash-outline" *ngIf="confirmModalType === 'danger'"></ion-icon>
+        <ion-icon name="alert-circle-outline" *ngIf="confirmModalType !== 'danger'"></ion-icon>
+      </div>
+      <h3 class="confirm-title">{{ confirmModalTitle }}</h3>
+      <p class="confirm-desc">{{ confirmModalMessage }}</p>
+      <div class="confirm-btn-row">
+        <button type="button" class="btn-dialog-cancel" (click)="handleConfirmModalCancel()">
+          {{ confirmModalCancelText }}
+        </button>
+        <button type="button" class="btn-dialog-action" [class.danger]="confirmModalType === 'danger'"
+          (click)="handleConfirmModalOk()">
+          {{ confirmModalConfirmText }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: BUAT RUANGAN -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isCreateRoomModalOpen" (click)="closeCreateRoomModal()">
+    <div class="room-dialog-card" (click)="$event.stopPropagation()">
+      <div class="dialog-header-with-icon">
+        <div class="header-icon-circle blue">
+          <ion-icon name="add-circle-outline"></ion-icon>
+        </div>
+        <div>
+          <h3>{{ isEn ? 'Create New Room' : 'Buat Ruang Baru' }}</h3>
+          <p class="dialog-sub">{{ isEn ? 'Create a shared room and get an invite code.' : 'Buat ruang keuangan dan dapatkan kode undangan acak.' }}</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeCreateRoomModal()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="dialog-form-body">
+        <label class="form-label" for="room-name-input">{{ isEn ? 'Room Name' : 'Nama Ruangan' }}</label>
+        <input
+          id="room-name-input"
+          class="custom-room-input"
+          type="text"
+          [placeholder]="isEn ? 'e.g. Apartment Funds, Shared Expenses' : 'Contoh: Keuangan Kos, Kas Bersama'"
+          [(ngModel)]="newRoomName"
+          (keydown.enter)="submitCreateRoom()"
+          autofocus />
+
+        <div class="error-inline" *ngIf="roomErrorMessage">
+          {{ roomErrorMessage }}
+        </div>
+      </div>
+
+      <div class="dialog-footer-actions">
+        <button type="button" class="btn-dialog-secondary" (click)="closeCreateRoomModal()">{{ isEn ? 'Cancel' : 'Batal' }}</button>
+        <button type="button" class="btn-dialog-primary" (click)="submitCreateRoom()">{{ isEn ? 'Create Room & Get Code' : 'Buat Ruang & Dapatkan Kode' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: KODE UNDANGAN BERHASIL DIBUAT -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isRoomCreatedSuccessModalOpen" (click)="finishCreateRoomAndStayInRoomSetup()">
+    <div class="room-dialog-card success-card" (click)="$event.stopPropagation()">
+      <div class="success-icon-badge">
+        <ion-icon name="checkmark"></ion-icon>
+      </div>
+
+      <h3 class="success-modal-title">{{ isEn ? 'Room Created Successfully!' : 'Ruangan Berhasil Dibuat!' }}</h3>
+      <p class="success-modal-desc">
+        {{ isEn ? 'Shared finance room is ready to use. Start recording transactions and managing savings together.' : 'Ruangan keuangan bersama siap digunakan. Mulai catat transaksi dan kelola tabungan bersama anggota Anda.' }}
+      </p>
+
+      <div class="success-room-preview" *ngIf="activeRoom">
+        <div class="preview-avatar">
+          <ion-icon name="people"></ion-icon>
+        </div>
+        <div class="preview-info">
+          <span class="preview-name">{{ activeRoom.name }}</span>
+          <span class="preview-code">{{ isEn ? 'Code' : 'Kode' }}: <strong>{{ activeRoom.inviteCode }}</strong></span>
+        </div>
+      </div>
+
+      <button type="button" class="btn-success-finish" (click)="finishCreateRoomAndStayInRoomSetup()">
+        <span>{{ isEn ? 'Done (View in Room)' : 'Selesai (Lihat di Ruangan)' }}</span>
+        <ion-icon name="arrow-forward-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: GABUNG RUANGAN -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isJoinRoomModalOpen" (click)="closeJoinRoomModal()">
+    <div class="room-dialog-card" (click)="$event.stopPropagation()">
+      <div class="dialog-header-with-icon">
+        <div class="header-icon-circle green">
+          <ion-icon name="key-outline"></ion-icon>
+        </div>
+        <div>
+          <h3>{{ isEn ? 'Join a Room' : 'Gabung ke Ruangan' }}</h3>
+          <p class="dialog-sub">{{ isEn ? 'Enter the invite code you received from the room owner.' : 'Masukkan kode undangan yang Anda terima dari pemilik ruangan.' }}</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeJoinRoomModal()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="dialog-form-body">
+        <label class="form-label" for="room-code-input">{{ isEn ? 'Invite Code' : 'Kode Undangan' }}</label>
+        <input
+          id="room-code-input"
+          class="custom-room-input code-input"
+          type="text"
+          [placeholder]="isEn ? 'e.g. CUAN-KE62 or KE62' : 'Contoh: CUAN-KE62 atau KE62'"
+          [(ngModel)]="joinRoomCodeInput"
+          (keydown.enter)="submitJoinRoom()"
+          autocapitalize="characters"
+          autofocus />
+        <span class="form-hint" style="font-size: 11px; color: #64748b; margin-top: 4px; display: block;">
+          {{ isEn ? 'You can enter the full code (e.g. CUAN-KE62) or just the 4 characters (e.g. KE62).' : 'Bisa masukkan kode lengkap (misal CUAN-KE62) atau cukup 4 karakter acaknya saja (misal KE62).' }}
+        </span>
+
+        <div class="error-inline" *ngIf="roomErrorMessage">
+          {{ roomErrorMessage }}
+        </div>
+      </div>
+
+      <div class="dialog-footer-actions">
+        <button type="button" class="btn-dialog-secondary" (click)="closeJoinRoomModal()">{{ isEn ? 'Cancel' : 'Batal' }}</button>
+        <button type="button" class="btn-dialog-primary" (click)="submitJoinRoom()">{{ isEn ? 'Join Now' : 'Gabung Sekarang' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: DETAIL RUANGAN / KELOLA RUANGAN -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isRoomDetailsModalOpen && activeRoom" (click)="closeRoomDetailsModal()">
+    <div class="room-dialog-card details-card" (click)="$event.stopPropagation()">
+      <div class="dialog-header-with-icon">
+        <div class="header-icon-circle coral">
+          <ion-icon name="people"></ion-icon>
+        </div>
+        <div class="header-text-flex">
+          <h3>{{ activeRoom.name }}</h3>
+          <span class="active-badge-pill">{{ isEn ? 'Active Room' : 'Ruangan Aktif' }}</span>
+        </div>
+        <button type="button" class="close-btn" (click)="closeRoomDetailsModal()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="room-detail-body">
+        <!-- Invite Code Box -->
+        <div class="invite-code-pill-row">
+          <div class="pill-info">
+            <span class="pill-title">{{ isEn ? 'Invite Code:' : 'Kode Undangan:' }}</span>
+            <strong class="pill-code">{{ activeRoom.inviteCode }}</strong>
+          </div>
+          <button type="button" class="btn-copy-pill" (click)="copyInviteCode(activeRoom.inviteCode)">
+            <ion-icon name="copy-outline"></ion-icon>
+            <span>{{ isEn ? 'Copy' : 'Salin' }}</span>
+          </button>
+        </div>
+
+        <!-- Member Count & List -->
+        <div class="members-section">
+          <div class="section-title-row">
+            <span>{{ isEn ? 'Joined Members' : 'Anggota Tergabung' }}</span>
+            <span class="member-count-badge">{{ activeRoom.members.length }} {{ isEn ? (activeRoom.members.length === 1 ? 'Member' : 'Members') : 'Orang' }}</span>
+          </div>
+          <div class="members-scroll-list">
+            <div class="member-item-row" *ngFor="let member of activeRoom.members">
+              <div class="member-avatar">
+                {{ (member.name || member.email).charAt(0).toUpperCase() }}
+              </div>
+              <div class="member-info-col">
+                <div class="member-name">{{ member.name }}</div>
+                <div class="member-email">{{ member.email }}</div>
+              </div>
+              <span class="member-role-tag" [class.owner]="member.role === 'owner'">
+                {{ member.role === 'owner' ? (isEn ? 'Owner' : 'Pemilik') : (isEn ? 'Member' : 'Anggota') }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="room-notice-box">
+          <ion-icon name="sync-outline"></ion-icon>
+          <span>{{ isEn ? 'Financial records and savings in this room are automatically synchronized for all members.' : 'Catatan keuangan dan tabungan di ruangan ini tersinkronisasi otomatis untuk semua anggota.' }}</span>
+        </div>
+      </div>
+
+      <div class="dialog-footer-actions space-between">
+        <button type="button" class="btn-leave-room" (click)="leaveCurrentRoom()">
+          <ion-icon [name]="activeRoom.ownerEmail === authService.currentUser?.email ? 'trash-outline' : 'exit-outline'"></ion-icon>
+          <span>{{ activeRoom.ownerEmail === authService.currentUser?.email ? (isEn ? 'Delete Room' : 'Hapus Ruangan') : (isEn ? 'Leave Room' : 'Keluar Ruang') }}</span>
+        </button>
+        <button type="button" class="btn-dialog-secondary" (click)="closeRoomDetailsModal()">{{ isEn ? 'Close' : 'Tutup' }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: PROFILE & EDIT PASSWORD             -->
+  <!-- ========================================== -->
+  <div class="custom-modal-backdrop" *ngIf="isProfileModalOpen" (click)="closeProfileModal()">
+    <div class="room-dialog-card profile-dialog-card" (click)="$event.stopPropagation()">
+      <div class="dialog-header-with-icon">
+        <div class="header-icon-circle coral">
+          <ion-icon name="person-circle-outline"></ion-icon>
+        </div>
+        <div class="header-text-flex">
+          <h3>{{ isEn ? 'Profile' : 'Profile' }}</h3>
+          <p class="dialog-sub">{{ isEn ? 'Manage account & change password' : 'Kelola akun & ganti kata sandi Anda' }}</p>
+        </div>
+        <button type="button" class="close-btn" (click)="closeProfileModal()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <!-- Account Info Strip -->
+      <div class="profile-account-strip">
+        <div class="profile-avatar">
+          <ion-icon name="person"></ion-icon>
+        </div>
+        <div class="profile-account-info">
+          <div class="profile-account-email">{{ authService.currentUser?.email || (isEn ? 'Signed in user' : 'Pengguna masuk') }}</div>
+          <span class="profile-account-badge">{{ isEn ? 'Active Account' : 'Akun Aktif' }}</span>
+        </div>
+      </div>
+
+      <div class="dialog-form-body profile-form-body">
+        <!-- Current Password -->
+        <div class="form-field-group">
+          <label class="form-label" for="profile-current-pass">{{ isEn ? 'Current Password' : 'Kata Sandi Saat Ini' }}</label>
+          <div class="password-input-wrap">
+            <input
+              id="profile-current-pass"
+              class="custom-room-input password-input"
+              [type]="showCurrentPassword ? 'text' : 'password'"
+              [placeholder]="isEn ? 'Enter current password' : 'Masukkan kata sandi lama'"
+              [(ngModel)]="profileCurrentPassword"
+              autocomplete="current-password" />
+            <button type="button" class="btn-toggle-eye" (click)="showCurrentPassword = !showCurrentPassword" [title]="showCurrentPassword ? 'Sembunyikan' : 'Tampilkan'">
+              <ion-icon [name]="showCurrentPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- New Password -->
+        <div class="form-field-group">
+          <label class="form-label" for="profile-new-pass">{{ isEn ? 'New Password' : 'Kata Sandi Baru' }}</label>
+          <div class="password-input-wrap">
+            <input
+              id="profile-new-pass"
+              class="custom-room-input password-input"
+              [type]="showNewPassword ? 'text' : 'password'"
+              [placeholder]="isEn ? 'Min. 6 characters' : 'Minimal 6 karakter'"
+              [(ngModel)]="profileNewPassword"
+              autocomplete="new-password" />
+            <button type="button" class="btn-toggle-eye" (click)="showNewPassword = !showNewPassword" [title]="showNewPassword ? 'Sembunyikan' : 'Tampilkan'">
+              <ion-icon [name]="showNewPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Confirm New Password -->
+        <div class="form-field-group">
+          <label class="form-label" for="profile-confirm-pass">{{ isEn ? 'Confirm New Password' : 'Konfirmasi Kata Sandi Baru' }}</label>
+          <div class="password-input-wrap">
+            <input
+              id="profile-confirm-pass"
+              class="custom-room-input password-input"
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              [placeholder]="isEn ? 'Repeat new password' : 'Ulangi kata sandi baru'"
+              [(ngModel)]="profileConfirmPassword"
+              (keydown.enter)="saveNewPassword()"
+              autocomplete="new-password" />
+            <button type="button" class="btn-toggle-eye" (click)="showConfirmPassword = !showConfirmPassword" [title]="showConfirmPassword ? 'Sembunyikan' : 'Tampilkan'">
+              <ion-icon [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="error-inline-box" *ngIf="profilePasswordError">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span>{{ profilePasswordError }}</span>
+        </div>
+
+        <div class="success-inline-box" *ngIf="profilePasswordSuccess">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          <span>{{ profilePasswordSuccess }}</span>
+        </div>
+      </div>
+
+      <div class="dialog-footer-actions">
+        <button type="button" class="btn-dialog-secondary" (click)="closeProfileModal()" [disabled]="isSavingPassword">
+          {{ isEn ? 'Cancel' : 'Batal' }}
+        </button>
+        <button type="button" class="btn-dialog-primary profile-save-btn" (click)="saveNewPassword()" [disabled]="isSavingPassword">
+          <ion-spinner name="crescent" *ngIf="isSavingPassword" style="width: 16px; height: 16px; margin-right: 6px;"></ion-spinner>
+          <span>{{ isSavingPassword ? (isEn ? 'Saving...' : 'Menyimpan...') : (isEn ? 'Save Password' : 'Simpan Kata Sandi') }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

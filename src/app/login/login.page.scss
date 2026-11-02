@@ -1,0 +1,183 @@
+.login-content {
+  --background: #f4f8f6;
+}
+
+.login-card {
+  box-sizing: border-box;
+  width: min(100% - 32px, 430px);
+  margin: clamp(36px, 10vh, 100px) auto 40px;
+  padding: 32px;
+  border: 1px solid #e5eee8;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 18px 50px #173b2b12;
+  color: #17251d;
+  text-align: center;
+}
+
+.brand-mark {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 18px;
+  place-items: center;
+  border-radius: 18px;
+  background: #e8f7ee;
+  color: #078847;
+  font-size: 30px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 8px 0 28px;
+  color: #68766d;
+  font-size: 14px;
+}
+
+.email-button {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #078847;
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.email-button:hover:not(:disabled) {
+  background: #06733c;
+}
+
+.email-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+form {
+  text-align: left;
+}
+
+ion-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #34443a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+ion-input {
+  --background: #ffffff !important;
+  --color: #17251d !important;
+  --placeholder-color: #8c9b91 !important;
+  --placeholder-opacity: 1 !important;
+  --highlight-color-focused: #078847;
+  background: #ffffff !important;
+  border: 1px solid #dce5df;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  color: #17251d !important;
+  --padding-bottom: 13px;
+  --padding-end: 14px;
+  --padding-start: 14px;
+  --padding-top: 13px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+ion-input:focus-within {
+  border-color: #078847;
+  box-shadow: 0 0 0 3px rgba(7, 136, 71, 0.12);
+}
+
+ion-input::part(native) {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #17251d !important;
+  border-radius: 10px;
+}
+
+/* Force pure white background even if browser applies autofill or autocomplete */
+ion-input::part(native):-webkit-autofill,
+ion-input::part(native):-webkit-autofill:hover,
+ion-input::part(native):-webkit-autofill:focus,
+ion-input::part(native):-webkit-autofill:active,
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #17251d !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  caret-color: #17251d !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+ion-input::part(native)::selection {
+  background-color: #cdeee0;
+  color: #17251d;
+}
+
+.mode-button {
+  margin-top: 18px;
+  border: 0;
+  background: transparent;
+  color: #078847;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mode-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.expiry-note {
+  margin: 16px 0 0;
+  color: #77837b;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.status-message {
+  margin-top: 18px;
+  border-radius: 10px;
+  background: #edf8f1;
+  color: #17653a;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 12px;
+}
+
+.status-message p {
+  margin: 0;
+}
+
+.status-message.error {
+  background: #fff2f0;
+  color: #a52b20;
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    margin-top: 8vh;
+    padding: 26px 22px;
+  }
+}

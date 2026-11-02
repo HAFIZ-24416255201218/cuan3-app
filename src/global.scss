@@ -1,0 +1,1078 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* @import "@ionic/angular/css/palettes/dark.system.css"; — disabled: using custom body.theme-dark instead */
+
+/* App Typography & Global Variables */
+:root {
+  --app-font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --ion-font-family: var(--app-font-family);
+
+  /* Theme Header Colors */
+  --header-coral: #e15241;
+  --header-teal: #14b8a6;
+  --header-blue: #3898c7;
+  --header-green: #7cb342;
+  --header-purple: #8b5cf6;
+  --header-dark: #1e293b;
+
+  --color-income: #10b981;
+  --color-expense: #ef4444;
+  --color-balance: #0284c7;
+
+  --card-bg: #ffffff;
+  --app-bg: #f8fafc;
+  --border-light: #e2e8f0;
+}
+
+body {
+  font-family: var(--app-font-family) !important;
+  user-select: none;
+  background-color: var(--app-bg);
+}
+
+/* Themes */
+body.theme-coral { --theme-primary: #e15241; --theme-gradient: linear-gradient(135deg, #e15241, #ff6b57); }
+body.theme-teal { --theme-primary: #0d9488; --theme-gradient: linear-gradient(135deg, #0d9488, #14b8a6); }
+body.theme-green { --theme-primary: #65a30d; --theme-gradient: linear-gradient(135deg, #65a30d, #84cc16); }
+body.theme-blue { --theme-primary: #0284c7; --theme-gradient: linear-gradient(135deg, #0284c7, #38bdf8); }
+body.theme-purple { --theme-primary: #7c3aed; --theme-gradient: linear-gradient(135deg, #7c3aed, #a855f7); }
+body.theme-dark { --theme-primary: #0f172a; --theme-gradient: linear-gradient(135deg, #0f172a, #334155); }
+
+body.theme-dark {
+  color-scheme: dark;
+  --header-coral: #991b1b;
+  --app-bg: #0f172a;
+  --card-bg: #1e293b;
+  --border-light: #334155;
+  --ion-background-color: #0f172a;
+  --ion-text-color: #e2e8f0;
+}
+
+body.theme-dark app-home {
+  color: #e2e8f0;
+}
+
+body.theme-dark app-home .export-dialog-box,
+body.theme-dark app-home .filter-dialog-box,
+body.theme-dark app-home .custom-modal-card,
+body.theme-dark app-home .category-action-dialog {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .export-dialog-body,
+body.theme-dark app-home .filter-dialog-body,
+body.theme-dark app-home .filter-items-scroll,
+body.theme-dark app-home .modal-header,
+body.theme-dark app-home .modal-footer {
+  background: #1e293b !important;
+}
+
+body.theme-dark app-home .export-label,
+body.theme-dark app-home .date-val-text,
+body.theme-dark app-home .export-input-clean,
+body.theme-dark app-home .export-select-clean,
+body.theme-dark app-home .filter-instruction-text,
+body.theme-dark app-home .filter-item-name,
+body.theme-dark app-home .modal-body,
+body.theme-dark app-home .modal-header h3,
+body.theme-dark app-home .help-modal-body .faq-item h4,
+body.theme-dark app-home .help-modal-body .faq-item p,
+body.theme-dark app-home .cat-dialog-title,
+body.theme-dark app-home .cat-form-label,
+body.theme-dark app-home .cat-dialog-input {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .export-input-clean,
+body.theme-dark app-home .export-select-wrap,
+body.theme-dark app-home .date-picker-trigger,
+body.theme-dark app-home .filter-segment-bar,
+body.theme-dark app-home .filter-checkbox-row,
+body.theme-dark app-home .category-white-card .category-list-row,
+body.theme-dark app-home .cat-daily-scroll .day-header-row,
+body.theme-dark app-home .cat-daily-scroll .tx-row {
+  border-color: #475569 !important;
+}
+
+body.theme-dark app-home .export-select-clean option {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .export-select-menu {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+body.theme-dark app-home .export-select-menu button {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .export-select-menu button:hover {
+  background: #334155 !important;
+}
+
+body.theme-dark app-home .export-select-menu button.selected {
+  background: #450a0a !important;
+  color: #fecaca !important;
+}
+
+body.theme-dark app-home .export-select-menu button ion-icon {
+  color: #fca5a5 !important;
+}
+
+body.theme-dark app-home .filter-checkbox-row:hover,
+body.theme-dark app-home .category-list-row:hover,
+body.theme-dark app-home .cat-daily-scroll .tx-row:hover {
+  background: #334155 !important;
+}
+
+body.theme-dark app-home .filter-seg-btn {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .filter-seg-btn:not(.active) {
+  background: #334155 !important;
+}
+
+body.theme-dark app-home .filter-seg-btn.active {
+  background: #0f172a !important;
+}
+
+body.theme-dark app-home .help-modal-body .faq-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .category-segment-container,
+body.theme-dark app-home .category-items-scroll,
+body.theme-dark app-home .view-category-detail,
+body.theme-dark app-home .cat-daily-scroll {
+  background: #0f172a !important;
+}
+
+body.theme-dark app-home .category-white-card,
+body.theme-dark app-home .category-white-card .category-list-row,
+body.theme-dark app-home .trend-chart-card,
+body.theme-dark app-home .cat-daily-scroll .day-group,
+body.theme-dark app-home .cat-summary-bar {
+  background: #1e293b !important;
+}
+
+body.theme-dark app-home .cat-row-name,
+body.theme-dark app-home .category-tabs-pill .cat-tab-btn:not(.active),
+body.theme-dark app-home .cat-daily-scroll .day-num,
+body.theme-dark app-home .cat-daily-scroll .tx-desc,
+body.theme-dark app-home .cat-summary-bar .cat-total-box .val,
+body.theme-dark app-home .cat-summary-bar .select-clean,
+body.theme-dark app-home .trend-chart-wrapper .y-axis,
+body.theme-dark app-home .trend-chart-wrapper .x-axis {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .cat-daily-scroll .day-sub-period,
+body.theme-dark app-home .cat-daily-scroll .tx-cat,
+body.theme-dark app-home .cat-summary-bar .cat-total-box .lbl {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .screen-view,
+body.theme-dark app-home .create-tx-scroll,
+body.theme-dark app-home .report-content-scroll,
+body.theme-dark app-home .charts-scroll-area,
+body.theme-dark app-home .view-search,
+body.theme-dark app-home .view-market-prices,
+body.theme-dark app-home .view-settings,
+body.theme-dark app-home .view-categories,
+body.theme-dark app-home .view-category-detail {
+  background-color: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .side-drawer-panel,
+body.theme-dark app-home .summary-strip,
+body.theme-dark app-home .search-keyword-bar,
+body.theme-dark app-home .search-filter-panel,
+body.theme-dark app-home .search-summary-strip,
+body.theme-dark app-home .category-segment-container,
+body.theme-dark app-home .category-white-card,
+body.theme-dark app-home .trend-chart-card,
+body.theme-dark app-home .cat-summary-bar,
+body.theme-dark app-home .day-group-card,
+body.theme-dark app-home .month-row-item,
+body.theme-dark app-home .weekly-row-item,
+body.theme-dark app-home .create-tx-card,
+body.theme-dark app-home .market-price-category,
+body.theme-dark app-home .market-price-detail,
+body.theme-dark app-home .market-price-instrument-list,
+body.theme-dark app-home .bi-converter-card,
+body.theme-dark app-home .bi-rates-table,
+body.theme-dark app-home .donut-chart-container,
+body.theme-dark app-home .trend-chart-card,
+body.theme-dark app-home .category-share-item,
+body.theme-dark app-home .cat-daily-scroll .day-group {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .drawer-label,
+body.theme-dark app-home .summary-label,
+body.theme-dark app-home .tx-row-label,
+body.theme-dark app-home .tx-page-title,
+body.theme-dark app-home .market-price-category-name,
+body.theme-dark app-home .market-price-category-description,
+body.theme-dark app-home .market-price-description,
+body.theme-dark app-home .market-price-instrument .instrument-info,
+body.theme-dark app-home .market-price-setup,
+body.theme-dark app-home .cur-code,
+body.theme-dark app-home .col-rate,
+body.theme-dark app-home .converter-title,
+body.theme-dark app-home .about-app-badge h3,
+body.theme-dark app-home .about-desc,
+body.theme-dark app-home .app-version,
+body.theme-dark app-home .search-result-card .res-note,
+body.theme-dark app-home .search-result-card .res-meta,
+body.theme-dark app-home .filter-spec-label,
+body.theme-dark app-home .cat-name,
+body.theme-dark app-home .cat-amount,
+body.theme-dark app-home .month-row-item,
+body.theme-dark app-home .weekly-row-item {
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .drawer-menu-item:hover,
+body.theme-dark app-home .drawer-menu-item:active,
+body.theme-dark app-home .search-result-card,
+body.theme-dark app-home .day-group-card .tx-row,
+body.theme-dark app-home .category-list-row,
+body.theme-dark app-home .market-price-category:hover,
+body.theme-dark app-home .bi-rates-table .bi-table-row:hover {
+  background: #263248 !important;
+}
+
+body.theme-dark app-home .search-results-canvas,
+body.theme-dark app-home .category-items-scroll,
+body.theme-dark app-home .cat-daily-scroll,
+body.theme-dark app-home .report-content-scroll {
+  background: #0f172a !important;
+}
+
+body.theme-dark app-home .search-filter-panel .filter-box-pill,
+body.theme-dark app-home .search-filter-panel .amount-min-max-box,
+body.theme-dark app-home .create-tx-card .tx-segment-row,
+body.theme-dark app-home .create-tx-card .tx-input-container,
+body.theme-dark app-home .create-tx-card .tx-row-action-btn.calc-btn,
+body.theme-dark app-home .market-price-setup,
+body.theme-dark app-home .market-price-loading,
+body.theme-dark app-home .bi-search-bar,
+body.theme-dark app-home .converter-field input,
+body.theme-dark app-home .converter-field select,
+body.theme-dark app-home .balance-input-row {
+  background: #263248 !important;
+  border-color: #475569 !important;
+}
+
+body.theme-dark app-home .search-keyword-bar .keyword-input,
+body.theme-dark app-home .search-filter-panel .filter-pill-select,
+body.theme-dark app-home .search-filter-panel .amount-clean-input,
+body.theme-dark app-home .create-tx-card .formatted-date-text,
+body.theme-dark app-home .create-tx-card .tx-select-field,
+body.theme-dark app-home .create-tx-card .tx-number-field,
+body.theme-dark app-home .create-tx-card .tx-text-field,
+body.theme-dark app-home .create-tx-card input,
+body.theme-dark app-home .create-tx-card select,
+body.theme-dark app-home .create-tx-card textarea,
+body.theme-dark app-home .market-price-setup input,
+body.theme-dark app-home .bi-search-bar input,
+body.theme-dark app-home .converter-field input,
+body.theme-dark app-home .converter-field select {
+  color: #f1f5f9 !important;
+  caret-color: #f1f5f9;
+}
+
+body.theme-dark app-home .search-keyword-bar .keyword-input::placeholder,
+body.theme-dark app-home .search-filter-panel .amount-clean-input::placeholder,
+body.theme-dark app-home .create-tx-card input::placeholder,
+body.theme-dark app-home .create-tx-card textarea::placeholder,
+body.theme-dark app-home .bi-search-bar input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
+}
+
+body.theme-dark app-home .about-app-badge h3 {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .about-desc,
+body.theme-dark app-home .app-version,
+body.theme-dark app-home .market-price-category-description,
+body.theme-dark app-home .market-price-description,
+body.theme-dark app-home .search-result-card .res-meta,
+body.theme-dark app-home .filter-spec-label {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .trend-chart-card .trend-svg rect {
+  fill: #0f172a;
+  stroke: #64748b;
+}
+
+body.theme-dark app-home .chart-subheader {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .chart-subheader .month-nav-label,
+body.theme-dark app-home .category-list-header .cat-count,
+body.theme-dark app-home .category-share-item .cat-name,
+body.theme-dark app-home .category-share-item .cat-amount,
+body.theme-dark app-home .donut-center-text .center-total {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .chart-subheader .nav-arrow-dark,
+body.theme-dark app-home .category-share-item .pct-text {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .chart-subheader .select-clean,
+body.theme-dark app-home .category-list-header .select-clean {
+  color: #f1f5f9 !important;
+  background: #0f172a !important;
+  border-color: #475569 !important;
+}
+
+body.theme-dark app-home .donut-chart-container .chart-percent-badge {
+  color: #f1f5f9 !important;
+  background: #334155 !important;
+}
+
+body.theme-dark app-home .category-list-header {
+  background: #1e293b !important;
+  border: 1px solid #334155;
+}
+
+body.theme-dark app-home .category-share-item {
+  border-bottom-color: #334155 !important;
+}
+
+body.theme-dark app-home .market-price-detail {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .bi-kurs-card,
+body.theme-dark app-home .km-main-card,
+body.theme-dark app-home .in-card,
+body.theme-dark app-home .lm-gold-card,
+body.theme-dark app-home .yj-history-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .bi-kurs-info .bi-title,
+body.theme-dark app-home .km-title-row .km-title,
+body.theme-dark app-home .in-title-row .in-title,
+body.theme-dark app-home .lm-gold-info .lm-title,
+body.theme-dark app-home .yj-history-card .yj-card-heading {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .bi-kurs-info .bi-meta,
+body.theme-dark app-home .km-title-row .km-meta,
+body.theme-dark app-home .in-title-row .in-meta,
+body.theme-dark app-home .lm-gold-info .lm-meta,
+body.theme-dark app-home .lm-source-footer {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .bi-kurs-card .bi-refresh-btn,
+body.theme-dark app-home .bi-kurs-card .bi-external-link,
+body.theme-dark app-home .bi-kurs-card .bi-chip:not(.active),
+body.theme-dark app-home .bi-kurs-card .bi-search-bar,
+body.theme-dark app-home .km-main-card .km-refresh-btn,
+body.theme-dark app-home .km-main-card .km-external-link,
+body.theme-dark app-home .km-main-card .km-stat-box,
+body.theme-dark app-home .km-main-card .km-search-box,
+body.theme-dark app-home .km-main-card .km-chip:not(.active),
+body.theme-dark app-home .in-card .in-refresh-btn,
+body.theme-dark app-home .in-card .in-external-link,
+body.theme-dark app-home .in-card .in-stat-box,
+body.theme-dark app-home .in-card .in-search-box,
+body.theme-dark app-home .in-card .in-chip:not(.active),
+body.theme-dark app-home .lm-gold-card .lm-refresh-btn,
+body.theme-dark app-home .lm-gold-card .lm-external-link,
+body.theme-dark app-home .lm-gold-card .lm-chip:not(.active) {
+  background: #0f172a !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .bi-kurs-card .bi-search-bar input,
+body.theme-dark app-home .km-main-card .km-search-box input,
+body.theme-dark app-home .in-card .in-search-box input,
+body.theme-dark app-home .yj-ihsg-card .yj-search-bar input {
+  color: #f1f5f9 !important;
+  caret-color: #f1f5f9;
+}
+
+body.theme-dark app-home .bi-kurs-card input::placeholder,
+body.theme-dark app-home .km-main-card input::placeholder,
+body.theme-dark app-home .in-card input::placeholder,
+body.theme-dark app-home .yj-ihsg-card input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
+}
+
+body.theme-dark app-home .bi-converter-card,
+body.theme-dark app-home .bi-rates-table,
+body.theme-dark app-home .km-commodity-card,
+body.theme-dark app-home .in-item,
+body.theme-dark app-home .market-price-instrument-list,
+body.theme-dark app-home .yj-history-card .yj-table-wrapper {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .bi-converter-card .converter-title,
+body.theme-dark app-home .bi-converter-card label,
+body.theme-dark app-home .km-commodity-card .km-item-name,
+body.theme-dark app-home .km-commodity-card .km-item-sub,
+body.theme-dark app-home .in-item .in-name,
+body.theme-dark app-home .in-item .in-sub,
+body.theme-dark app-home .market-price-instrument .instrument-info,
+body.theme-dark app-home .market-price-instrument .lm-name-col,
+body.theme-dark app-home .market-price-instrument .lm-item-name,
+body.theme-dark app-home .market-price-instrument .lm-item-meta {
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .km-commodity-card .km-name-wrap .km-item-name,
+body.theme-dark app-home .km-commodity-card .km-name-wrap .km-unit-text,
+body.theme-dark app-home .km-commodity-card .km-name-wrap .km-badge-sub,
+body.theme-dark app-home .km-commodity-card .km-card-right .km-price {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .km-commodity-card .km-name-wrap .km-badge-sub {
+  background: #334155 !important;
+}
+
+body.theme-dark app-home .bi-converter-card input,
+body.theme-dark app-home .bi-converter-card select {
+  background: #0f172a !important;
+  border-color: #475569 !important;
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .bi-rates-table .bi-table-header,
+body.theme-dark app-home .yj-history-card .yj-table th {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .bi-rates-table .bi-table-row,
+body.theme-dark app-home .yj-history-card .yj-table td {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .bi-rates-table .bi-table-row.selected {
+  background: #263b55 !important;
+}
+
+body.theme-dark app-home .bi-rates-table .bi-copy-action {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .market-copy-action,
+body.theme-dark app-home .market-copy-row td {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .market-copy-action span,
+body.theme-dark app-home .market-copy-action .market-copy-message {
+  color: #86efac !important;
+}
+
+body.theme-dark app-home .market-copy-action span.error,
+body.theme-dark app-home .market-copy-action .market-copy-message.error {
+  color: #fca5a5 !important;
+}
+
+body.theme-dark app-home .yj-price-copy-trigger {
+  color: #f8fafc !important;
+}
+
+body.theme-dark app-home .yj-history-card .yj-table tr.copy-selected td {
+  background: #263b55 !important;
+}
+
+body.theme-dark app-home .bi-rates-table .bi-copy-action span {
+  color: #86efac !important;
+}
+
+body.theme-dark app-home .bi-rates-table .bi-copy-action span.error {
+  color: #fca5a5 !important;
+}
+
+body.theme-dark app-home .duplicate-picker-dialog {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .duplicate-picker-dialog .duplicate-dialog-header,
+body.theme-dark app-home .duplicate-picker-dialog .duplicate-dialog-footer,
+body.theme-dark app-home .duplicate-picker-dialog .duplicate-item-row {
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .duplicate-picker-dialog .header-text-wrap h3,
+body.theme-dark app-home .duplicate-picker-dialog .duplicate-item-row .tx-item-cat {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .duplicate-picker-dialog .header-text-wrap p,
+body.theme-dark app-home .duplicate-picker-dialog .duplicate-item-row .tx-item-sub {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .duplicate-picker-dialog .duplicate-item-row:hover {
+  background: #263248 !important;
+}
+
+body.theme-dark app-home .duplicate-picker-dialog .duplicate-item-row .tx-item-amount.expense {
+  color: #f87171 !important;
+}
+
+body.theme-dark app-home .duplicate-picker-dialog .duplicate-item-row .tx-item-amount.income {
+  color: #4ade80 !important;
+}
+
+body.theme-dark app-home .bi-rates-table .cur-code,
+body.theme-dark app-home .bi-rates-table .col-rate {
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .bi-rates-table .cur-sub,
+body.theme-dark app-home .km-item-sub,
+body.theme-dark app-home .in-item .in-sub,
+body.theme-dark app-home .market-price-instrument .instrument-unavailable {
+  color: #94a3b8 !important;
+}
+
+body.theme-dark app-home select {
+  color-scheme: dark;
+}
+
+body.theme-dark app-home select option {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .bi-converter-card .converter-result {
+  background: #12352f !important;
+  border-color: #166534 !important;
+}
+
+body.theme-dark app-home .bi-converter-card .converter-result span,
+body.theme-dark app-home .bi-converter-card .converter-result strong {
+  color: #86efac !important;
+}
+
+body.theme-dark app-home .bi-converter-card .converter-result .converter-copy span.error {
+  color: #fca5a5 !important;
+}
+
+body.theme-dark app-home .km-main-card .km-stat-val,
+body.theme-dark app-home .in-card .in-stat-val,
+body.theme-dark app-home .km-commodity-card .km-price,
+body.theme-dark app-home .in-item .in-usd-price {
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .km-main-card .km-stat-lbl,
+body.theme-dark app-home .in-card .in-stat-lbl,
+body.theme-dark app-home .in-item .in-idr-price {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .lm-gold-card .lm-item-name,
+body.theme-dark app-home .lm-gold-card .lm-item-meta {
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .lm-gold-card .lm-instrument {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .yj-history-card .yj-card-heading {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .yj-history-card .yj-table tr:hover td,
+body.theme-dark app-home .bi-rates-table .bi-table-row:hover,
+body.theme-dark app-home .km-commodity-card:hover,
+body.theme-dark app-home .in-item:hover {
+  background: #263248 !important;
+}
+
+body.theme-dark app-home .lm-source-footer {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .lm-source-footer a {
+  color: #60a5fa !important;
+}
+
+body.theme-dark app-home .confirm-dialog-card {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .confirm-dialog-card .confirm-title {
+  color: #f8fafc !important;
+}
+
+body.theme-dark app-home .confirm-dialog-card .confirm-desc {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .confirm-dialog-card .btn-dialog-cancel {
+  background: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .km-detail-modal,
+body.theme-dark app-home .in-detail-dialog {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .km-modal-header,
+body.theme-dark app-home .km-modal-body,
+body.theme-dark app-home .km-modal-footer,
+body.theme-dark app-home .in-dialog-header,
+body.theme-dark app-home .in-modal-body,
+body.theme-dark app-home .in-dialog-footer {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .km-modal-title-box h3,
+body.theme-dark app-home .in-dialog-title-box h3,
+body.theme-dark app-home .km-modal-price,
+body.theme-dark app-home .in-hero-usd,
+body.theme-dark app-home .in-cell-val {
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .in-dialog-title-box p,
+body.theme-dark app-home .km-history-title,
+body.theme-dark app-home .km-modal-unit,
+body.theme-dark app-home .in-hero-unit,
+body.theme-dark app-home .in-cell-lbl {
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .km-modal-hero,
+body.theme-dark app-home .in-modal-price-hero,
+body.theme-dark app-home .in-detail-cell {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .km-history-table-wrap {
+  border-color: #334155 !important;
+}
+
+body.theme-dark app-home .km-history-table th,
+body.theme-dark app-home .km-history-table td {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark app-home .km-history-table th {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+}
+
+body.theme-dark app-home .km-modal-close,
+body.theme-dark app-home .in-dialog-close,
+body.theme-dark app-home .km-modal-footer .btn-secondary,
+body.theme-dark app-home .in-dialog-footer .btn-cancel {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #f1f5f9 !important;
+}
+
+body.theme-dark app-home .km-web-btn {
+  color: #34d399 !important;
+}
+
+body.theme-dark app-home .inc-amt,
+body.theme-dark app-home .summary-val.inc,
+body.theme-dark app-home .val.inc,
+body.theme-dark app-home .s-val.inc,
+body.theme-dark app-home .income-text,
+body.theme-dark app-home .text-up {
+  color: #34d399 !important;
+}
+
+body.theme-dark app-home .exp-amt,
+body.theme-dark app-home .summary-val.exp,
+body.theme-dark app-home .val.exp,
+body.theme-dark app-home .s-val.exp,
+body.theme-dark app-home .expense-text,
+body.theme-dark app-home .text-down {
+  color: #f87171 !important;
+}
+
+/* Common Utilities */
+.income-text {
+  color: #10b981 !important;
+  font-weight: 600;
+}
+.expense-text {
+  color: #ef4444 !important;
+  font-weight: 600;
+}
+.balance-text {
+  color: #1e293b !important;
+  font-weight: 700;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* Global autofill reset to preserve clean white background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #17251d !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+body.theme-dark input:-webkit-autofill,
+body.theme-dark input:-webkit-autofill:hover,
+body.theme-dark input:-webkit-autofill:focus,
+body.theme-dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0f172a inset !important;
+  box-shadow: 0 0 0 1000px #0f172a inset !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+}
+
+/* ==================================================== */
+/* SHARED FINANCE ROOM & MODALS - DARK MODE             */
+/* ==================================================== */
+body.theme-dark app-home,
+body.theme-dark {
+  .view-room-setup {
+    background: #0f172a !important;
+    color: #e2e8f0 !important;
+
+    .room-setup-content {
+      background: #0f172a !important;
+    }
+
+    .room-setup-header {
+      h2 { color: #f1f5f9 !important; }
+      p { color: #94a3b8 !important; }
+    }
+
+    .room-action-card-item {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+
+      &:hover {
+        border-color: #38bdf8 !important;
+        box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15) !important;
+      }
+
+      .card-main-title { color: #f1f5f9 !important; }
+      .card-sub-title { color: #94a3b8 !important; }
+
+      .card-circle-icon.blue {
+        background: rgba(56, 189, 248, 0.15) !important;
+        color: #38bdf8 !important;
+      }
+      .card-circle-icon.green {
+        background: rgba(16, 185, 129, 0.15) !important;
+        color: #34d399 !important;
+      }
+    }
+
+    .user-saved-rooms-block {
+      .saved-rooms-header {
+        .saved-rooms-title { color: #f1f5f9 !important; }
+        .rooms-count-pill {
+          background: #1e293b !important;
+          color: #38bdf8 !important;
+          border-color: #334155 !important;
+        }
+      }
+
+      .saved-room-item-card {
+        background: #1e293b !important;
+        border-color: #334155 !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+
+        &:hover {
+          border-color: #475569 !important;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        .room-badge-avatar {
+          background: #0f172a !important;
+          color: #38bdf8 !important;
+        }
+
+        .room-text-info {
+          .room-headline .room-title-name { color: #f1f5f9 !important; }
+          .room-sub-meta {
+            color: #94a3b8 !important;
+            code {
+              background: #0f172a !important;
+              color: #38bdf8 !important;
+              border-color: #334155 !important;
+            }
+          }
+        }
+
+        .item-actions .btn-room-enter {
+          background: #0284c7 !important;
+          color: #ffffff !important;
+          box-shadow: 0 3px 10px rgba(2, 132, 199, 0.4) !important;
+          &:hover {
+            background: #0369a1 !important;
+          }
+        }
+      }
+    }
+  }
+
+  /* Modals in Dark Mode */
+  .room-dialog-card {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6) !important;
+
+    .dialog-header-with-icon {
+      h3 { color: #f1f5f9 !important; }
+      .dialog-sub { color: #94a3b8 !important; }
+      .close-btn { color: #94a3b8 !important; }
+    }
+
+    .dialog-form-body {
+      .form-label { color: #cbd5e1 !important; }
+      .custom-room-input {
+        background: #0f172a !important;
+        color: #f1f5f9 !important;
+        border-color: #334155 !important;
+      }
+      .form-hint { color: #94a3b8 !important; }
+    }
+
+    .invite-code-pill-row {
+      background: #0f172a !important;
+      border-color: #334155 !important;
+
+      .pill-info {
+        .pill-title { color: #94a3b8 !important; }
+        .pill-code { color: #38bdf8 !important; }
+      }
+
+      .btn-copy-pill {
+        background: #1e293b !important;
+        color: #38bdf8 !important;
+        border: 1px solid #334155 !important;
+      }
+    }
+
+    .members-section {
+      .section-title-row {
+        color: #e2e8f0 !important;
+        .member-count-badge {
+          background: #0f172a !important;
+          color: #38bdf8 !important;
+          border-color: #334155 !important;
+        }
+      }
+
+      .members-scroll-list .member-item-row {
+        background: #0f172a !important;
+        border-color: #334155 !important;
+
+        .member-avatar {
+          background: #1e293b !important;
+          color: #38bdf8 !important;
+          border-color: #334155 !important;
+        }
+
+        .member-info-col {
+          .member-name { color: #f1f5f9 !important; }
+          .member-email { color: #94a3b8 !important; }
+        }
+
+        .member-role-tag {
+          background: #1e293b !important;
+          color: #94a3b8 !important;
+          &.owner {
+            background: rgba(239, 68, 68, 0.2) !important;
+            color: #f87171 !important;
+          }
+        }
+      }
+    }
+
+    .room-notice-box {
+      background: rgba(16, 185, 129, 0.12) !important;
+      border-color: rgba(16, 185, 129, 0.3) !important;
+      color: #34d399 !important;
+    }
+
+    .btn-dialog-secondary {
+      background: #334155 !important;
+      color: #e2e8f0 !important;
+      &:hover { background: #475569 !important; }
+    }
+
+    .btn-leave-room {
+      background: rgba(239, 68, 68, 0.15) !important;
+      border-color: rgba(239, 68, 68, 0.3) !important;
+      color: #f87171 !important;
+      &:hover { background: rgba(239, 68, 68, 0.25) !important; }
+    }
+
+    &.success-card {
+      background: #1e293b !important;
+      border-color: #334155 !important;
+
+      .success-modal-title { color: #f1f5f9 !important; }
+      .success-modal-desc { color: #94a3b8 !important; }
+
+      .success-room-preview {
+        background: #0f172a !important;
+        border-color: #334155 !important;
+
+        .preview-avatar {
+          background: rgba(16, 185, 129, 0.2) !important;
+          color: #34d399 !important;
+        }
+
+        .preview-info {
+          .preview-name { color: #f1f5f9 !important; }
+          .preview-code {
+            color: #94a3b8 !important;
+            strong { color: #38bdf8 !important; }
+          }
+        }
+      }
+    }
+
+    &.profile-dialog-card {
+      .profile-account-strip {
+        background: #0f172a !important;
+        border-color: #334155 !important;
+
+        .profile-avatar {
+          background: rgba(225, 82, 65, 0.2) !important;
+          color: #f87171 !important;
+        }
+
+        .profile-account-info {
+          .profile-account-email { color: #f1f5f9 !important; }
+          .profile-account-badge {
+            background: rgba(16, 185, 129, 0.2) !important;
+            color: #34d399 !important;
+          }
+        }
+      }
+
+      .profile-form-body {
+        .form-label { color: #cbd5e1 !important; }
+
+        .password-input-wrap {
+          .btn-toggle-eye {
+            color: #94a3b8 !important;
+            &:hover {
+              color: #f1f5f9 !important;
+              background: rgba(255, 255, 255, 0.08) !important;
+            }
+          }
+        }
+
+        .error-inline-box {
+          background: rgba(239, 68, 68, 0.15) !important;
+          border-color: rgba(239, 68, 68, 0.35) !important;
+          color: #fca5a5 !important;
+        }
+
+        .success-inline-box {
+          background: rgba(16, 185, 129, 0.15) !important;
+          border-color: rgba(16, 185, 129, 0.35) !important;
+          color: #86efac !important;
+        }
+      }
+    }
+  }
+}
+
+

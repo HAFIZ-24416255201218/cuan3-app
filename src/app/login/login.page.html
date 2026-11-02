@@ -1,0 +1,83 @@
+<ion-content class="login-content">
+  <main class="login-card">
+    <div class="brand-mark" aria-hidden="true">
+      <ion-icon name="wallet-outline"></ion-icon>
+    </div>
+    <h1>Catatan Keuangan</h1>
+    <p class="subtitle">{{ isRegistering ? 'Buat akun untuk memulai' : 'Masuk untuk melanjutkan' }}</p>
+
+    <form (ngSubmit)="isRegistering ? register() : login()" autocomplete="off">
+      <ion-label for="login-email">Alamat Email</ion-label>
+      <ion-input
+        id="login-email"
+        name="cuan_email_input"
+        type="email"
+        inputmode="email"
+        autocomplete="nope"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="ketik email anda"
+        [(ngModel)]="email"
+        [readonly]="isEmailReadonly"
+        (focus)="unlockEmail()"
+        (pointerdown)="unlockEmail()"
+        (click)="unlockEmail()"
+        (ionInput)="syncEmailFromInput($event)"
+        required
+        [disabled]="busy">
+      </ion-input>
+      <ion-label for="login-password">Kata Sandi</ion-label>
+      <ion-input
+        id="login-password"
+        name="cuan_password_input"
+        type="password"
+        [autocomplete]="isRegistering ? 'new-password' : 'current-password'"
+        placeholder="Masukkan kata sandi"
+        [(ngModel)]="password"
+        required
+        minlength="6"
+        maxlength="128"
+        [disabled]="busy">
+      </ion-input>
+      @if (isRegistering) {
+        <ion-label for="confirm-password">Konfirmasi Kata Sandi</ion-label>
+        <ion-input
+          id="confirm-password"
+          name="cuan_confirm_password"
+          type="password"
+          autocomplete="new-password"
+          placeholder="Ulangi kata sandi"
+          [(ngModel)]="confirmPassword"
+          required
+          minlength="6"
+          maxlength="128"
+          [disabled]="busy">
+        </ion-input>
+      }
+      <button class="email-button" type="submit" [disabled]="busy">
+        @if (busy) {
+          <ion-spinner name="crescent" aria-label="Memproses"></ion-spinner>
+          <span>{{ isRegistering ? 'Membuat akun...' : 'Memproses...' }}</span>
+        } @else {
+          <span>{{ isRegistering ? 'Daftar' : 'Masuk' }}</span>
+        }
+      </button>
+    </form>
+
+    <p class="expiry-note">
+      @if (isRegistering) {
+        <span>Setelah mendaftar, akun langsung aktif dan Anda akan masuk ke aplikasi.</span>
+      } @else {
+        <span>Masuk dengan email dan kata sandi akun Anda.</span>
+      }
+    </p>
+    @if (statusMessage) {
+      <div class="status-message" [class.error]="statusIsError" role="status" aria-live="polite">
+        <p>{{ statusMessage }}</p>
+      </div>
+    }
+    <button class="mode-button" type="button" (click)="toggleMode()" [disabled]="busy">
+      {{ isRegistering ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar' }}
+    </button>
+  </main>
+</ion-content>
