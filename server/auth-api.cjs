@@ -73,17 +73,40 @@ passport.deserializeUser(async (id, done) => {
 app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
 app.disable('x-powered-by');
 app.use(helmet({ contentSecurityPolicy: false }));
+// Whitelist origins untuk keamanan CORS
+const allowedOrigins = [
+  'https://cuan3-app-nine.vercel.app',
+  'capacitor://localhost',
+  'http://localhost',
+  'https://localhost',
+  'http://localhost:4200',
+  'http://localhost:8100'
+];
+
 app.use(cors({
-  origin: appBase.origin,
+  origin: (origin, callback) => {
+    // Izinkan permintaan dari aplikasi native mobile (tanpa header origin)
+    if (!origin) return callback(null, true);
+    // Cek apakah origin terdaftar di whitelist atau domain vercel
+    const isWhitelisted = allowedOrigins.some(item => origin === item || origin.startsWith('capacitor://') || origin.startsWith('http://localhost') || origin.startsWith('https://localhost')) || origin.endsWith('.vercel.app');
+    if (isWhitelisted || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    return callback(new Error('Akses diblokir oleh kebijakan keamanan CORS.'));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+  maxAge: 86400,
 }));
-app.use(express.json({ limit: '10kb' }));
+
+app.use(express.json({ limit: '1mb' }));
 app.use(passport.initialize());
+
 if (sessionConfigured) {
+  const isProd = process.env.NODE_ENV === 'production';
   app.use(session({
-    name: process.env.NODE_ENV === 'production' ? '__Host-cuan.sid' : 'cuan.sid',
+    name: isProd ? '__Host-cuan.sid' : 'cuan.sid',
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -94,8 +117,8 @@ if (sessionConfigured) {
     }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
       path: '/',
       maxAge: 14 * 24 * 60 * 60 * 1000,
     },
