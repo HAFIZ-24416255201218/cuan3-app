@@ -5,110 +5,161 @@ import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { SharedRoom } from './room.service';
 
-interface CsrfResponse {
-  csrfToken: string;
-}
-
 /**
- * Thin HTTP wrapper for the server-side Room API.
- * Falls back gracefully (returns null / throws) when the server is offline,
- * so the app continues to work in offline / local-only mode.
+ * Dedicated client for Room synchronization across different devices.
+ * Communicates with the Vercel API backed by MongoDB Atlas.
  */
 @Injectable({ providedIn: 'root' })
 export class RoomApiService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiBaseUrl;
-  private readonly TIMEOUT_MS = 5000;
+  private readonly TIMEOUT_MS = 8000;
 
-  /** Upload a newly-created room to the server. Returns the server copy or null on failure. */
+  private get defaultHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+  }
+
+  /**
+   * Upload / sync a room to the cloud server so other devices can find it.
+   */
   async uploadRoom(room: SharedRoom): Promise<SharedRoom | null> {
     try {
-      const headers = await this.csrfHeaders();
+      console.log('[RoomApi] Mengunggah ruangan ke cloud:', room.name, room.inviteCode);
       const result = await firstValueFrom(
-        this.http.post<SharedRoom>(`${this.apiUrl}/rooms`, room, { headers, withCredentials: true })
-          .pipe(timeout(this.TIMEOUT_MS), catchError(() => of(null)))
+        this.http.post<SharedRoom>(`${this.apiUrl}/rooms`, room, {
+          headers: this.defaultHeaders,
+          withCredentials: false
+        }).pipe(
+          timeout(this.TIMEOUT_MS),
+          catchError(err => {
+            console.warn('[RoomApi] Upload room gagal:', err.status, err.message);
+            return of(null);
+          })
+        )
       );
+      if (result) {
+        console.log('[RoomApi] Ruangan berhasil terunggah ke cloud:', result.inviteCode);
+      }
       return result;
-    } catch {
+    } catch (e: any) {
+      console.warn('[RoomApi] Upload room error:', e?.message);
       return null;
     }
   }
 
-  /** Find a room by invite code on the server. Returns the room or null if not found / offline. */
+  /**
+   * Find a room by its invite code (e.g. "CUAN-4X9B" or "4X9B").
+   */
   async findRoom(code: string): Promise<SharedRoom | null> {
     try {
-      const clean = code.trim().replace(/[^A-Za-z0-9]/g, '');
+      const clean = code.trim().replace(/[^A-Za-z0-9-]/g, '');
       if (!clean) return null;
+      console.log('[RoomApi] Mencari ruangan dengan kode:', clean);
       const result = await firstValueFrom(
-        this.http.get<SharedRoom>(`${this.apiUrl}/rooms/find/${encodeURIComponent(clean)}`, { withCredentials: true })
-          .pipe(timeout(this.TIMEOUT_MS), catchError(() => of(null)))
+        this.http.get<SharedRoom>(`${this.apiUrl}/rooms/find/${encodeURIComponent(clean)}`, {
+          headers: this.defaultHeaders,
+          withCredentials: false
+        }).pipe(
+          timeout(this.TIMEOUT_MS),
+          catchError(err => {
+            console.warn('[RoomApi] Cari ruangan gagal:', err.status, err.message);
+            return of(null);
+          })
+        )
       );
+      if (result) {
+        console.log('[RoomApi] Ruangan ditemukan di cloud:', result.name, result.inviteCode);
+      }
       return result;
-    } catch {
+    } catch (e: any) {
+      console.warn('[RoomApi] Find room error:', e?.message);
       return null;
     }
   }
 
-  /** Join an existing server-side room (adds caller as member). Returns updated room. */
-  async joinRoom(roomId: string, memberName: string): Promise<SharedRoom | null> {
+  /**
+   * Join an existing room on the cloud server.
+   */
+  async joinRoom(roomId: string, memberName: string, memberEmail?: string): Promise<SharedRoom | null> {
     try {
-      const headers = await this.csrfHeaders();
+      console.log('[RoomApi] Bergabung ke ruangan di cloud:', roomId, memberName);
+      const payload = {
+        name: memberName,
+        email: memberEmail || `${memberName.toLowerCase().replace(/\s+/g, '')}@cuan.app`
+      };
       const result = await firstValueFrom(
         this.http.post<SharedRoom>(
           `${this.apiUrl}/rooms/${encodeURIComponent(roomId)}/join`,
-          { name: memberName },
-          { headers, withCredentials: true }
-        ).pipe(timeout(this.TIMEOUT_MS), catchError(() => of(null)))
+          payload,
+          {
+            headers: this.defaultHeaders,
+            withCredentials: false
+          }
+        ).pipe(
+          timeout(this.TIMEOUT_MS),
+          catchError(err => {
+            console.warn('[RoomApi] Join room gagal:', err.status, err.message);
+            return of(null);
+          })
+        )
       );
       return result;
-    } catch {
+    } catch (e: any) {
+      console.warn('[RoomApi] Join room error:', e?.message);
       return null;
     }
   }
 
-  /** Push updated transactions/savings to server. Returns updated room or null on failure. */
-  async syncRoom(roomId: string, patch: Partial<Pick<SharedRoom, 'transactions' | 'savingsGoals' | 'members'>>): Promise<SharedRoom | null> {
+  /**
+   * Push latest transactions / savings to the cloud room.
+   */
+  async syncRoom(
+    roomId: string,
+    patch: Partial<Pick<SharedRoom, 'transactions' | 'savingsGoals' | 'members'>>
+  ): Promise<SharedRoom | null> {
     try {
-      const headers = await this.csrfHeaders();
       const result = await firstValueFrom(
         this.http.put<SharedRoom>(
           `${this.apiUrl}/rooms/${encodeURIComponent(roomId)}`,
           patch,
-          { headers, withCredentials: true }
-        ).pipe(timeout(this.TIMEOUT_MS), catchError(() => of(null)))
+          {
+            headers: this.defaultHeaders,
+            withCredentials: false
+          }
+        ).pipe(
+          timeout(this.TIMEOUT_MS),
+          catchError(err => {
+            console.warn('[RoomApi] Sync room gagal:', err.status, err.message);
+            return of(null);
+          })
+        )
       );
       return result;
-    } catch {
+    } catch (e: any) {
+      console.warn('[RoomApi] Sync room error:', e?.message);
       return null;
     }
   }
 
-  /** Delete (owner) or leave (member) a room on the server. */
+  /**
+   * Delete or leave a room on the cloud server.
+   */
   async deleteOrLeaveRoom(roomId: string): Promise<void> {
     try {
-      const headers = await this.csrfHeaders();
       await firstValueFrom(
-        this.http.delete(`${this.apiUrl}/rooms/${encodeURIComponent(roomId)}`, { headers, withCredentials: true })
-          .pipe(timeout(this.TIMEOUT_MS), catchError(() => of(null)))
+        this.http.delete(`${this.apiUrl}/rooms/${encodeURIComponent(roomId)}`, {
+          headers: this.defaultHeaders,
+          withCredentials: false
+        }).pipe(
+          timeout(this.TIMEOUT_MS),
+          catchError(() => of(null))
+        )
       );
     } catch {
-      // Ignore – local state is already cleaned up by RoomService
+      // Ignore
     }
-  }
-
-  private async csrfHeaders(): Promise<HttpHeaders> {
-    try {
-      const csrf = await firstValueFrom(
-        this.http.get<CsrfResponse>(`${this.apiUrl}/auth/csrf`, { withCredentials: true })
-          .pipe(timeout(2000), catchError(() => of(null)))
-      );
-      if (csrf?.csrfToken) {
-        return new HttpHeaders({ 'X-CSRF-Token': csrf.csrfToken });
-      }
-    } catch {
-      // Server offline – return empty headers; request will likely fail gracefully
-    }
-    return new HttpHeaders();
   }
 }
-

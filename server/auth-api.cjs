@@ -84,19 +84,10 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Izinkan permintaan dari aplikasi native mobile (tanpa header origin)
-    if (!origin) return callback(null, true);
-    // Cek apakah origin terdaftar di whitelist atau domain vercel
-    const isWhitelisted = allowedOrigins.some(item => origin === item || origin.startsWith('capacitor://') || origin.startsWith('http://localhost') || origin.startsWith('https://localhost')) || origin.endsWith('.vercel.app');
-    if (isWhitelisted || process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    return callback(new Error('Akses diblokir oleh kebijakan keamanan CORS.'));
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'X-CSRF-Token'],
+  allowedHeaders: ['Content-Type', 'X-CSRF-Token', 'Authorization', 'Accept'],
   maxAge: 86400,
 }));
 
@@ -356,10 +347,51 @@ api.post('/auth/logout', requireSessionReady, requireCsrf, requireAuth, (request
 });
 
 
-// ── Room API Routes ──────────────────────────────────────────────────────────
+// ── Room API Routes (Dedicated Cloud Sync for Multi-Device) ─────────────────
 
-// Helper to safely strip large fields for list responses
+let isDbConnecting = false;
+
+async function ensureDb(request, response, next) {
+  if (mongoose.connection.readyState === 1) {
+    databaseConnected = true;
+    return next();
+  }
+  if (!process.env.MONGODB_URI) {
+    return response.status(503).json({
+      message: 'MONGODB_URI belum diatur di Vercel Environment Variables. Hubungkan MongoDB Atlas agar fitur ruangan bisa aktif.'
+    });
+  }
+  try {
+    if (!isDbConnecting) {
+      isDbConnecting = true;
+      await mongoose.connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 8000,
+        maxPoolSize: 10,
+        socketTimeoutMS: 45000,
+      });
+      databaseConnected = true;
+      isDbConnecting = false;
+      console.log('MongoDB connected for Room API.');
+    } else {
+      let count = 0;
+      while (mongoose.connection.readyState !== 1 && count < 25) {
+        await new Promise(r => setTimeout(r, 200));
+        count++;
+      }
+    }
+    return next();
+  } catch (err) {
+    isDbConnecting = false;
+    console.error('MongoDB connection error in Room API:', err.message);
+    return response.status(503).json({
+      message: 'Gagal terhubung ke MongoDB Atlas. Pastikan akses IP di Atlas mengizinkan 0.0.0.0/0 dan MONGODB_URI benar.',
+      error: err.message
+    });
+  }
+}
+
 function publicRoom(room) {
+  if (!room) return null;
   return {
     id: room.id,
     name: room.name,
@@ -372,92 +404,107 @@ function publicRoom(room) {
   };
 }
 
-// Rate limiter for room actions
 const roomLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 60,
+  limit: 200,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
 });
 
-// POST /api/rooms - Create a room (requires auth + DB)
-api.post('/rooms', requireSessionReady, requireCsrf, roomLimiter, requireAuth, async (request, response, next) => {
+// POST /rooms - Buat atau simpan ruangan (bisa diakses tanpa session cookie)
+api.post('/rooms', ensureDb, roomLimiter, async (request, response, next) => {
   try {
     const { id, name, inviteCode, ownerEmail, createdAt, members, transactions, savingsGoals } = request.body || {};
-    if (!id || !name || !inviteCode || !ownerEmail) {
-      return response.status(400).json({ message: 'Data ruangan tidak lengkap.' });
+    if (!name || !inviteCode) {
+      return response.status(400).json({ message: 'Data ruangan tidak lengkap (nama dan kode undangan wajib).' });
     }
-    // Verify caller owns this room
-    const callerEmail = (request.user.email || '').trim().toLowerCase();
-    if (callerEmail !== (ownerEmail || '').trim().toLowerCase()) {
-      return response.status(403).json({ message: 'Tidak berwenang membuat ruangan atas nama email lain.' });
-    }
-    const existing = await Room.findOne({ inviteCode: inviteCode.toUpperCase() });
-    if (existing) {
-      return response.status(409).json({ message: 'Kode ruangan sudah ada. Coba buat ruangan baru.' });
-    }
-    const room = await Room.create({
-      id,
-      name: name.trim(),
-      inviteCode: inviteCode.toUpperCase(),
-      ownerEmail: callerEmail,
-      createdAt: createdAt || new Date().toISOString(),
-      members: members || [],
-      transactions: transactions || [],
-      savingsGoals: savingsGoals || [],
-    });
-    return response.status(201).json(publicRoom(room));
+    const cleanCode = String(inviteCode).trim().toUpperCase();
+    const roomId = id || ('room_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6));
+
+    const updated = await Room.findOneAndUpdate(
+      { inviteCode: cleanCode },
+      {
+        $set: {
+          id: roomId,
+          name: String(name).trim(),
+          inviteCode: cleanCode,
+          ownerEmail: (ownerEmail || 'user@cuan.app').trim().toLowerCase(),
+          createdAt: createdAt || new Date().toISOString(),
+          members: Array.isArray(members) && members.length > 0 ? members : [{
+            id: 'usr_' + Date.now().toString(36),
+            name: (ownerEmail || 'Pemilik').split('@')[0],
+            email: (ownerEmail || 'user@cuan.app').trim().toLowerCase(),
+            role: 'owner',
+            joinedAt: new Date().toISOString()
+          }],
+          transactions: Array.isArray(transactions) ? transactions : [],
+          savingsGoals: Array.isArray(savingsGoals) ? savingsGoals : [],
+        }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    return response.status(201).json(publicRoom(updated));
   } catch (error) {
     return next(error);
   }
 });
 
-// GET /api/rooms/find/:code - Find room by invite code (requires auth + DB)
-// Aman dari NoSQL injection & DoS (query terindeks langsung di database, bukan memuat semua data ke RAM)
-api.get('/rooms/find/:code', requireSessionReady, roomLimiter, requireAuth, async (request, response, next) => {
+// GET /rooms/find/:code - Cari ruangan berdasarkan kode undangan (lengkap atau 4 karakter)
+api.get('/rooms/find/:code', ensureDb, roomLimiter, async (request, response, next) => {
   try {
-    const raw = String(request.params.code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+    const raw = String(request.params.code || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20);
     if (!raw || raw.length < 2) {
-      return response.status(400).json({ message: 'Kode tidak valid.' });
+      return response.status(400).json({ message: 'Kode undangan tidak valid.' });
     }
 
-    // 1. Coba pencocokan kode persis
+    // 1. Cocokkan kode persis
     let found = await Room.findOne({ inviteCode: raw });
 
-    // 2. Coba tambahkan prefix 'CUAN-' jika belum ada
-    if (!found && !raw.startsWith('CUAN-')) {
-      found = await Room.findOne({ inviteCode: 'CUAN-' + raw });
+    // 2. Cocokkan dengan prefix CUAN-
+    if (!found) {
+      const altCode = raw.startsWith('CUAN-') ? raw.replace('CUAN-', '') : ('CUAN-' + raw);
+      found = await Room.findOne({ inviteCode: altCode });
     }
 
-    // 3. Coba pencocokan akhiran 4-karakter secara aman
+    // 3. Cocokkan 4 karakter akhiran
     if (!found && raw.length <= 6) {
       const cleanSuffix = raw.replace(/[^A-Z0-9]/g, '');
-      found = await Room.findOne({ inviteCode: { $regex: '-' + cleanSuffix + '$', $options: 'i' } });
+      found = await Room.findOne({ inviteCode: { $regex: cleanSuffix + '$', $options: 'i' } });
     }
 
     if (!found) {
       return response.status(404).json({ message: 'Ruangan tidak ditemukan. Pastikan kode sudah benar.' });
     }
+
     return response.json(publicRoom(found));
   } catch (error) {
     return next(error);
   }
 });
 
-// POST /api/rooms/:id/join - Join a room (requires auth + DB)
-api.post('/rooms/:id/join', requireSessionReady, requireCsrf, roomLimiter, requireAuth, async (request, response, next) => {
+// POST /rooms/:id/join - Gabung ke ruangan
+api.post('/rooms/:id/join', ensureDb, roomLimiter, async (request, response, next) => {
   try {
-    const callerEmail = (request.user.email || '').trim().toLowerCase();
-    const callerName = (request.body.name || callerEmail.split('@')[0] || 'Anggota').trim();
-    const room = await Room.findOne({ id: request.params.id });
-    if (!room) return response.status(404).json({ message: 'Ruangan tidak ditemukan.' });
+    const identifier = request.params.id;
+    const room = await Room.findOne({
+      $or: [{ id: identifier }, { inviteCode: identifier.toUpperCase() }]
+    });
 
-    const alreadyMember = (room.members || []).some(m => (m.email || '').toLowerCase() === callerEmail);
+    if (!room) {
+      return response.status(404).json({ message: 'Ruangan tidak ditemukan.' });
+    }
+
+    const callerEmail = String(request.body.email || request.user?.email || 'anggota@cuan.app').trim().toLowerCase();
+    const callerName = String(request.body.name || callerEmail.split('@')[0] || 'Anggota').trim();
+
+    const alreadyMember = (room.members || []).some(m => (m.email || '').toLowerCase() === callerEmail || m.name === callerName);
     const isOwner = (room.ownerEmail || '').toLowerCase() === callerEmail;
+
     if (!alreadyMember && !isOwner) {
       room.members = room.members || [];
       room.members.push({
-        id: 'usr_' + Date.now().toString(36),
+        id: 'usr_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
         name: callerName,
         email: callerEmail,
         role: 'member',
@@ -465,93 +512,73 @@ api.post('/rooms/:id/join', requireSessionReady, requireCsrf, roomLimiter, requi
       });
       await room.save();
     }
+
     return response.json(publicRoom(room));
   } catch (error) {
     return next(error);
   }
 });
 
-// PUT /api/rooms/:id - Sync room data (transactions & savings) - owner/member only
-api.put('/rooms/:id', requireSessionReady, requireCsrf, roomLimiter, requireAuth, async (request, response, next) => {
+// PUT /rooms/:id - Sinkronisasi transaksi & tabungan
+api.put('/rooms/:id', ensureDb, roomLimiter, async (request, response, next) => {
   try {
-    const callerEmail = (request.user.email || '').trim().toLowerCase();
-    const room = await Room.findOne({ id: request.params.id });
-    if (!room) return response.status(404).json({ message: 'Ruangan tidak ditemukan.' });
+    const identifier = request.params.id;
+    const room = await Room.findOne({
+      $or: [{ id: identifier }, { inviteCode: identifier.toUpperCase() }]
+    });
 
-    const isMember = (room.members || []).some(m => (m.email || '').toLowerCase() === callerEmail);
-    const isOwner = (room.ownerEmail || '').toLowerCase() === callerEmail;
-    if (!isMember && !isOwner) return response.status(403).json({ message: 'Tidak berwenang mengakses ruangan ini.' });
-
-    if (request.body.transactions !== undefined) room.transactions = request.body.transactions;
-    if (request.body.savingsGoals !== undefined) room.savingsGoals = request.body.savingsGoals;
-    if (request.body.members !== undefined) room.members = request.body.members;
-    await room.save();
-    return response.json(publicRoom(room));
-  } catch (error) {
-    return next(error);
-  }
-});
-
-// DELETE /api/rooms/:id - Delete or leave room
-api.delete('/rooms/:id', requireSessionReady, requireCsrf, roomLimiter, requireAuth, async (request, response, next) => {
-  try {
-    const callerEmail = (request.user.email || '').trim().toLowerCase();
-    const room = await Room.findOne({ id: request.params.id });
-    if (!room) return response.status(404).json({ message: 'Ruangan tidak ditemukan.' });
-
-    const isOwner = (room.ownerEmail || '').toLowerCase() === callerEmail;
-    if (isOwner) {
-      await Room.deleteOne({ id: request.params.id });
-      return response.status(204).end();
+    if (!room) {
+      return response.status(404).json({ message: 'Ruangan tidak ditemukan.' });
     }
-    // Non-owner: leave
-    room.members = (room.members || []).filter(m => (m.email || '').toLowerCase() !== callerEmail);
+
+    if (request.body.transactions !== undefined) {
+      room.transactions = request.body.transactions;
+    }
+    if (request.body.savingsGoals !== undefined) {
+      room.savingsGoals = request.body.savingsGoals;
+    }
+    if (Array.isArray(request.body.members) && request.body.members.length > 0) {
+      const existingEmails = new Set((room.members || []).map(m => (m.email || '').toLowerCase()));
+      for (const m of request.body.members) {
+        if (!existingEmails.has((m.email || '').toLowerCase())) {
+          room.members.push(m);
+          existingEmails.add((m.email || '').toLowerCase());
+        }
+      }
+    }
+
     await room.save();
+    return response.json(publicRoom(room));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// DELETE /rooms/:id - Hapus atau tinggalkan ruangan
+api.delete('/rooms/:id', ensureDb, roomLimiter, async (request, response, next) => {
+  try {
+    const identifier = request.params.id;
+    await Room.deleteOne({
+      $or: [{ id: identifier }, { inviteCode: identifier.toUpperCase() }]
+    });
     return response.status(204).end();
   } catch (error) {
     return next(error);
   }
 });
 
-async function connectDb() {
-  if (databaseConnected || mongoose.connection.readyState === 1) {
-    return;
-  }
-  if (!process.env.MONGODB_URI) {
-    console.error('Authentication is disabled: set MONGODB_URI in environment variables.');
-    return;
-  }
-  try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      maxPoolSize: 10,
-      socketTimeoutMS: 45000,
-    });
-    databaseConnected = true;
-    console.log('Authentication database connected.');
-  } catch (error) {
-    console.error('Authentication database connection failed:', error.name || 'unknown error');
-  }
-}
-
-// Middleware agar koneksi database selalu siap di lingkungan serverless (Vercel)
-app.use(async (_request, _response, next) => {
-  if (process.env.MONGODB_URI && mongoose.connection.readyState !== 1) {
-    await connectDb();
-  }
-  next();
-});
-
+// Mount router di '/api' dan '/' agar compatible dengan berbagai macam Vercel rewrite
 app.use('/api', api);
+app.use('/', api);
+
 app.use((error, _request, response, _next) => {
-  console.error('Authentication API request failed:', error.code || error.name || 'unknown error');
-  response.status(500).json({ message: 'Terjadi kesalahan pada layanan login. Coba lagi nanti.' });
+  console.error('API request error:', error.message || error);
+  response.status(500).json({ message: 'Terjadi kesalahan pada layanan server. Coba lagi nanti.' });
 });
 
 function start() {
   const port = Number(process.env.PORT || 3001);
   app.listen(port, () => console.log('Authentication API listening on port ' + port));
-  connectDb();
 }
 
 if (!process.env.VERCEL) {

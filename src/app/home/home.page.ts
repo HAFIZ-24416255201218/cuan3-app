@@ -3516,13 +3516,11 @@ export class HomePage implements OnInit, OnDestroy {
     try {
       this.backupPersonalFinanceData(userEmail);
 
-      // 1. Cari ruangan di server terlebih dahulu (lintas perangkat)
+      // 1. Cari ruangan di server cloud terlebih dahulu (lintas perangkat)
       const serverRoom = await this.roomApiService.findRoom(this.joinRoomCodeInput);
       if (serverRoom) {
-        // Simpan ke localStorage agar bisa diakses offline lalu join di server
-        const localRoom = this.roomService.mergeServerRoom(serverRoom);
-        const joinedRoom = await this.roomApiService.joinRoom(serverRoom.id, userName) || localRoom;
-        // Perbarui localStorage dengan data terbaru dari server
+        // Gabung di server
+        const joinedRoom = await this.roomApiService.joinRoom(serverRoom.id || serverRoom.inviteCode, userName, userEmail) || serverRoom;
         this.roomService.mergeServerRoom(joinedRoom);
         this.roomService.setActiveRoom(joinedRoom, userEmail);
         this.activeRoom = joinedRoom;
@@ -3535,12 +3533,12 @@ export class HomePage implements OnInit, OnDestroy {
         }
         this.isJoinRoomModalOpen = false;
         this.activeView = 'room_setup';
-        this.triggerRoomSync();
+        this.recalculateAll();
         alert(this.isEn ? `Successfully joined room "${joinedRoom.name}"!` : `Berhasil bergabung ke ruangan "${joinedRoom.name}"!`);
         return;
       }
 
-      // 2. Fallback: cari di localStorage (untuk ruangan lokal / offline)
+      // 2. Fallback: cari di localStorage jika offline
       const room = this.roomService.joinRoom(this.joinRoomCodeInput, userEmail, userName);
       this.activeRoom = room;
       if (room.transactions && room.transactions.length > 0) {
@@ -3552,10 +3550,10 @@ export class HomePage implements OnInit, OnDestroy {
       }
       this.isJoinRoomModalOpen = false;
       this.activeView = 'room_setup';
-      this.triggerRoomSync();
+      this.recalculateAll();
       alert(this.isEn ? `Successfully joined room "${room.name}"!` : `Berhasil bergabung ke ruangan "${room.name}"!`);
     } catch (e: any) {
-      this.roomErrorMessage = e.message || (this.isEn ? 'Invite code not found.' : 'Kode undangan tidak ditemukan.');
+      this.roomErrorMessage = e.message || (this.isEn ? 'Invite code not found. Make sure the room exists.' : 'Kode undangan tidak ditemukan. Pastikan kode benar dan perangkat pembuat ruangan sudah terhubung ke internet saat membuat ruangan.');
     }
   }
 
@@ -3611,12 +3609,30 @@ export class HomePage implements OnInit, OnDestroy {
     }
   }
 
-  public triggerRoomSync(): void {
+  public async triggerRoomSync(): Promise<void> {
     this.isRoomSyncing = true;
-    setTimeout(() => {
+    try {
+      if (this.activeRoom && this.activeRoom.inviteCode) {
+        const cloudRoom = await this.roomApiService.findRoom(this.activeRoom.inviteCode);
+        if (cloudRoom) {
+          this.roomService.mergeServerRoom(cloudRoom);
+          this.activeRoom = cloudRoom;
+          if (Array.isArray(cloudRoom.transactions)) {
+            this.financeService.setTransactions(cloudRoom.transactions);
+          }
+          if (Array.isArray(cloudRoom.savingsGoals)) {
+            this.savingsService.setGoals(cloudRoom.savingsGoals);
+            this.savingsGoals = cloudRoom.savingsGoals;
+          }
+          this.recalculateAll();
+        }
+      }
+    } catch (e) {
+      console.warn('Sync room error:', e);
+    } finally {
       this.isRoomSyncing = false;
       this.changeDetector.detectChanges();
-    }, 700);
+    }
   }
 
   // ==========================================

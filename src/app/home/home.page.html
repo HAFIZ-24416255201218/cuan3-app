@@ -157,15 +157,15 @@
           <div class="room-info">
             <div class="room-name">{{ activeRoom.name }}</div>
             <div class="room-members">
-              <ion-icon name="people"></ion-icon>
+              <ion-icon name="person-outline"></ion-icon>
               <span>{{ activeRoom.members.length }} {{ isEn ? (activeRoom.members.length === 1 ? 'member' : 'members') : 'anggota' }}</span>
             </div>
           </div>
           <div class="room-sync-status" (click)="$event.stopPropagation(); triggerRoomSync()">
             <ion-icon name="sync-outline" class="sync-icon" [class.spinning]="isRoomSyncing"></ion-icon>
             <div class="sync-text-group">
-              <span class="sync-title">{{ isEn ? 'Synchronized' : 'Tersinkron' }}</span>
-              <span class="sync-desc">{{ isEn ? 'All members see the same real-time data' : 'Semua anggota melihat data yang sama' }}</span>
+              <span class="sync-title">{{ isEn ? 'Tersinkron' : 'Tersinkron' }}</span>
+              <span class="sync-desc">{{ isEn ? 'Cloud real-time' : 'Cloud real-time' }}</span>
             </div>
           </div>
           <ion-icon name="chevron-forward-outline" class="room-chevron"></ion-icon>
