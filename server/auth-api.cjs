@@ -490,6 +490,35 @@ api.delete('/rooms/:id', requireSessionReady, requireCsrf, roomLimiter, requireA
   }
 });
 
+async function connectDb() {
+  if (databaseConnected || mongoose.connection.readyState === 1) {
+    return;
+  }
+  if (!process.env.MONGODB_URI) {
+    console.error('Authentication is disabled: set MONGODB_URI in environment variables.');
+    return;
+  }
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10,
+      socketTimeoutMS: 45000,
+    });
+    databaseConnected = true;
+    console.log('Authentication database connected.');
+  } catch (error) {
+    console.error('Authentication database connection failed:', error.name || 'unknown error');
+  }
+}
+
+// Middleware agar koneksi database selalu siap di lingkungan serverless (Vercel)
+app.use(async (_request, _response, next) => {
+  if (process.env.MONGODB_URI && mongoose.connection.readyState !== 1) {
+    await connectDb();
+  }
+  next();
+});
+
 app.use('/api', api);
 app.use((error, _request, response, _next) => {
   console.error('Authentication API request failed:', error.code || error.name || 'unknown error');
@@ -498,23 +527,12 @@ app.use((error, _request, response, _next) => {
 
 function start() {
   const port = Number(process.env.PORT || 3001);
-  app.listen(port, () => console.log(`Authentication API listening on port ${port}`));
-
-  if (!process.env.MONGODB_URI) {
-    console.error('Authentication is disabled: set MONGODB_URI in .env.');
-    return;
-  }
-
-  mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 5000,
-    maxPoolSize: 10,
-    socketTimeoutMS: 45000,
-  }).then(() => {
-    databaseConnected = true;
-    console.log('Authentication database connected.');
-  }).catch(error => {
-    console.error('Authentication database connection failed:', error.name || 'unknown error');
-  });
+  app.listen(port, () => console.log('Authentication API listening on port ' + port));
+  connectDb();
 }
 
-start();
+if (!process.env.VERCEL) {
+  start();
+}
+
+module.exports = app;
