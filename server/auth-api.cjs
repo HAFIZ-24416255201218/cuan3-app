@@ -117,23 +117,107 @@ if (sessionConfigured) {
   app.use(passport.session());
 }
 
+// ── Database Connection Helpers ─────────────────────────────────────────────
+let isDbConnecting = false;
+
+async function connectDbSafe() {
+  if (mongoose.connection.readyState === 1) {
+    databaseConnected = true;
+    return;
+  }
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI is not set in environment variables.');
+  }
+  if (!isDbConnecting) {
+    isDbConnecting = true;
+    try {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        serverSelectionTimeoutMS: 8000,
+        maxPoolSize: 10,
+        socketTimeoutMS: 45000,
+      });
+      databaseConnected = true;
+      isDbConnecting = false;
+      console.log('MongoDB connected successfully.');
+    } catch (err) {
+      isDbConnecting = false;
+      throw err;
+    }
+  } else {
+    let count = 0;
+    while (mongoose.connection.readyState !== 1 && count < 25) {
+      await new Promise(r => setTimeout(r, 200));
+      count++;
+    }
+  }
+}
+
+async function ensureDb(request, response, next) {
+  if (mongoose.connection.readyState === 1) {
+    databaseConnected = true;
+    return next();
+  }
+  if (!process.env.MONGODB_URI) {
+    return response.status(503).json({
+      status: 'error',
+      message: 'MONGODB_URI belum diatur di Environment Variables server.'
+    });
+  }
+  try {
+    await connectDbSafe();
+    return next();
+  } catch (err) {
+    console.error('MongoDB connection error:', err.name || 'UnknownError');
+    return response.status(503).json({
+      status: 'error',
+      message: 'Gagal terhubung ke MongoDB Atlas. Pastikan akses IP di Atlas mengizinkan 0.0.0.0/0 dan MONGODB_URI benar.',
+      error: err.name || 'ConnectionError'
+    });
+  }
+}
+
 const api = express.Router();
-api.get('/auth/status', (_request, response) => {
+api.get('/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'cuan-api',
+    time: new Date().toISOString()
+  });
+});
+
+api.get('/auth/status', async (_request, response) => {
   response.set('Cache-Control', 'no-store');
+  const hasMongoUri = Boolean(process.env.MONGODB_URI);
+  const hasSessionSecret = Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET.length >= 32);
+
+  if (hasMongoUri && mongoose.connection.readyState !== 1) {
+    try {
+      await connectDbSafe();
+    } catch (e) {
+      // Handled in isConnected check
+    }
+  }
+
+  const isConnected = mongoose.connection.readyState === 1;
   const missingDatabaseConfig = [
-    ...(!process.env.MONGODB_URI ? ['MONGODB_URI'] : []),
-    ...(!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32 ? ['SESSION_SECRET (minimal 32 karakter)'] : []),
+    ...(!hasMongoUri ? ['MONGODB_URI'] : []),
+    ...(!hasSessionSecret ? ['SESSION_SECRET (minimal 32 karakter)'] : []),
   ];
   let message;
   if (missingDatabaseConfig.length) {
-    message = `Backend belum siap. Lengkapi ${missingDatabaseConfig.join(' dan ')} di file .env.`;
-  } else if (!databaseConnected) {
-    message = 'Koneksi MongoDB Atlas belum berhasil. Periksa MONGODB_URI dan akses jaringan Atlas.';
+    message = `Backend belum siap. Lengkapi ${missingDatabaseConfig.join(' dan ')} di Environment Variables.`;
+  } else if (!isConnected) {
+    message = 'Koneksi MongoDB Atlas belum berhasil. Periksa MONGODB_URI dan akses jaringan Atlas (0.0.0.0/0).';
+  } else {
+    message = 'Backend dan database MongoDB Atlas terhubung dengan baik.';
   }
 
-  response.json({
-    emailPasswordEnabled: sessionConfigured && databaseConnected,
-    databaseConnected,
+  return response.json({
+    status: isConnected ? 'connected' : 'not_connected',
+    emailPasswordEnabled: Boolean(hasSessionSecret && isConnected),
+    databaseConnected: isConnected,
+    hasMongoUri,
+    hasSessionSecret,
     message,
     missingDatabaseConfig,
   });
@@ -349,47 +433,6 @@ api.post('/auth/logout', requireSessionReady, requireCsrf, requireAuth, (request
 
 // ── Room API Routes (Dedicated Cloud Sync for Multi-Device) ─────────────────
 
-let isDbConnecting = false;
-
-async function ensureDb(request, response, next) {
-  if (mongoose.connection.readyState === 1) {
-    databaseConnected = true;
-    return next();
-  }
-  if (!process.env.MONGODB_URI) {
-    return response.status(503).json({
-      message: 'MONGODB_URI belum diatur di Vercel Environment Variables. Hubungkan MongoDB Atlas agar fitur ruangan bisa aktif.'
-    });
-  }
-  try {
-    if (!isDbConnecting) {
-      isDbConnecting = true;
-      await mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 8000,
-        maxPoolSize: 10,
-        socketTimeoutMS: 45000,
-      });
-      databaseConnected = true;
-      isDbConnecting = false;
-      console.log('MongoDB connected for Room API.');
-    } else {
-      let count = 0;
-      while (mongoose.connection.readyState !== 1 && count < 25) {
-        await new Promise(r => setTimeout(r, 200));
-        count++;
-      }
-    }
-    return next();
-  } catch (err) {
-    isDbConnecting = false;
-    console.error('MongoDB connection error in Room API:', err.message);
-    return response.status(503).json({
-      message: 'Gagal terhubung ke MongoDB Atlas. Pastikan akses IP di Atlas mengizinkan 0.0.0.0/0 dan MONGODB_URI benar.',
-      error: err.message
-    });
-  }
-}
-
 function publicRoom(room) {
   if (!room) return null;
   return {
@@ -565,6 +608,15 @@ api.delete('/rooms/:id', ensureDb, roomLimiter, async (request, response, next) 
   } catch (error) {
     return next(error);
   }
+});
+
+// 404 Handler untuk rute /api yang tidak ditemukan
+api.use((req, res) => {
+  res.status(404).json({
+    status: 'error',
+    error: 'Not Found',
+    message: `Endpoint API '${req.originalUrl || req.url}' tidak ditemukan.`
+  });
 });
 
 // Mount router di '/api' dan '/' agar compatible dengan berbagai macam Vercel rewrite
