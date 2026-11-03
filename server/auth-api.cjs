@@ -97,7 +97,7 @@ app.use(passport.initialize());
 if (sessionConfigured) {
   const isProd = process.env.NODE_ENV === 'production';
   app.use(session({
-    name: isProd ? '__Host-cuan.sid' : 'cuan.sid',
+    name: 'cuan.sid',
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -227,10 +227,18 @@ api.get('/auth/status', async (_request, response) => {
 });
 
 function requireSessionReady(_request, response, next) {
-  if (!sessionConfigured || !databaseConnected) {
+  if (!sessionConfigured) {
     return response.status(503).json({ message: 'Backend login belum siap. Periksa konfigurasi MongoDB dan SESSION_SECRET.' });
   }
-  return next();
+  // Jika DB sudah connect, langsung lanjut
+  if (databaseConnected || mongoose.connection.readyState === 1) {
+    databaseConnected = true;
+    return next();
+  }
+  // Coba connect dulu, baru lanjut ke route
+  connectDbSafe()
+    .then(() => next())
+    .catch(() => response.status(503).json({ message: 'Gagal terhubung ke database. Pastikan MONGODB_URI benar di Vercel Dashboard.' }));
 }
 
 const loginIpLimiter = rateLimit({
@@ -620,6 +628,15 @@ api.use((req, res) => {
     error: 'Not Found',
     message: `Endpoint API '${req.originalUrl || req.url}' tidak ditemukan.`
   });
+});
+
+// ── Global DB connect middleware ────────────────────────────────────────────
+// Coba connect ke MongoDB di setiap request (idempotent - skip jika sudah connect)
+app.use(async (req, res, next) => {
+  if (process.env.MONGODB_URI && mongoose.connection.readyState !== 1) {
+    try { await connectDbSafe(); } catch (e) { /* error sudah di-log di connectDbSafe */ }
+  }
+  next();
 });
 
 // Mount router di '/api' dan '/' agar compatible dengan berbagai macam Vercel rewrite

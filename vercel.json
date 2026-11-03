@@ -1,22 +1,36 @@
 {
   "version": 2,
+  "outputDirectory": "www",
+  "buildCommand": "npm run build",
   "functions": {
     "api/index.js": {
-      "maxDuration": 15
+      "maxDuration": 15,
+      "memory": 512
     }
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api",
-      "destination": "/api/index.js"
+      "src": "/api/(.*)",
+      "dest": "/api/index.js",
+      "headers": {
+        "Cache-Control": "no-store"
+      }
     },
     {
-      "source": "/api/:path*",
-      "destination": "/api/index.js"
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
     },
     {
-      "source": "/((?!api(?:/|$)).*)",
-      "destination": "/index.html"
+      "src": "/favicon.png",
+      "dest": "/favicon.png"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|svg|ico|woff|woff2|ttf|eot|json|txt|xml|webmanifest|map))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
