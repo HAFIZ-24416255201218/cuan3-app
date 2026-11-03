@@ -119,6 +119,7 @@ if (sessionConfigured) {
 
 // ── Database Connection Helpers ─────────────────────────────────────────────
 let isDbConnecting = false;
+let lastDbErrorName = null;
 
 async function connectDbSafe() {
   if (mongoose.connection.readyState === 1) {
@@ -141,6 +142,7 @@ async function connectDbSafe() {
       console.log('MongoDB connected successfully.');
     } catch (err) {
       isDbConnecting = false;
+      lastDbErrorName = err.name || 'ConnectionError';
       throw err;
     }
   } else {
@@ -214,6 +216,7 @@ api.get('/auth/status', async (_request, response) => {
 
   return response.json({
     status: isConnected ? 'connected' : 'not_connected',
+    dbError: isConnected ? null : lastDbErrorName,
     emailPasswordEnabled: Boolean(hasSessionSecret && isConnected),
     databaseConnected: isConnected,
     hasMongoUri,
